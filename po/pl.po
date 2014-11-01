@@ -1,14 +1,25 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 msgid ""
 msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-12-27 17:09+0100\n"
+"POT-Creation-Date: DATE\n"
+"PO-Revision-Date: 2014-07-10 15:30+0200\n"
+"Last-Translator: krzys_h <krzys_h@interia.pl>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: pl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2);\n"
+"X-Generator: Pootle 2.5.1.1\n"
 "X-Language: pl_PL\n"
 "X-Source-Language: en_US\n"
+"X-POOTLE-MTIME: 1405002617.000000\n"
 
 msgid " "
 msgstr " "
@@ -24,9 +35,6 @@ msgstr " Sterowniki:"
 
 msgid " Exercises in the chapter:"
 msgstr " Ćwiczenia w tym rozdziale:"
-
-msgid " Free game on this chapter:"
-msgstr " Swobodna gra na tej planecie:"
 
 msgid " Free game on this planet:"
 msgstr " Swobodna gra na tej planecie:"
@@ -60,10 +68,7 @@ msgstr "Brak \" ] \""
 
 #, c-format
 msgid "\"%s\" missing in this exercise"
-msgstr "It misses \"%s\" in this exercise"
-
-msgid "%1"
-msgstr ""
+msgstr "Brakuje \"%s\" w tym ćwiczeniu"
 
 msgid "..behind"
 msgstr "..za"
@@ -122,9 +127,6 @@ msgstr "Królowa Obcych została zabita"
 msgid "Already carrying something"
 msgstr "Nie można nieść więcej przedmiotów"
 
-msgid "Alt"
-msgstr "Alt"
-
 msgid "Analysis already performed"
 msgstr "Analiza została już wykonana"
 
@@ -181,6 +183,9 @@ msgstr ""
 msgid "Black box"
 msgstr "Czarna skrzynka"
 
+msgid "Blood\\Display blood when the astronaut or the alien queen is hit"
+msgstr "Krew\\Pokazuj krew gdy astronauta lub Królowa Obcych zostaje trafiona"
+
 msgid "Blue"
 msgstr "Niebieski"
 
@@ -204,6 +209,9 @@ msgstr "Zbuduj wieżę obronną"
 
 msgid "Build a derrick"
 msgstr "Zbuduj kopalnię"
+
+msgid "Build a destroyer"
+msgstr "Zbuduj niszczarkę"
 
 msgid "Build a exchange post"
 msgstr "Zbuduj stację przekaźnikową"
@@ -307,12 +315,6 @@ msgstr "Budynek za blisko"
 msgid "Button %1"
 msgstr "Przycisk %1"
 
-msgid "COLOBOT"
-msgstr "COLOBOT"
-
-msgid "COLOBOT: Gold Edition"
-msgstr "COLOBOT: Gold Edition"
-
 msgid "Calling an unknown function"
 msgstr "Odwołanie do nieznanej funkcji"
 
@@ -339,6 +341,12 @@ msgstr "Camera to right"
 
 msgid "Can not create this; there are too many objects"
 msgstr "Nie można tego utworzyć, za dużo obiektów"
+
+msgid "Can not produce not researched object"
+msgstr "Nie można wyprodukować nie wynalezionego obiektu"
+
+msgid "Can not produce this object in this mission"
+msgstr "Nie można utworzyć tego obiektu w tej misji"
 
 msgid "Can't open file"
 msgstr "Nie można otworzyć pliku"
@@ -382,6 +390,9 @@ msgstr "Brak nawiasu zamykającego"
 msgid "Colobot rules!"
 msgstr "Colobot rządzi!"
 
+msgid "Colobot: Gold Edition"
+msgstr "Colobot: Gold Edition"
+
 msgid "Command line"
 msgstr "Linia polecenia"
 
@@ -415,9 +426,6 @@ msgstr "Kopiuj"
 msgid "Copy (Ctrl+c)"
 msgstr "Kopiuj (Ctrl+C)"
 
-msgid "Ctrl"
-msgstr "Ctrl"
-
 msgid "Current mission saved"
 msgstr "Bieżąca misja zapisana"
 
@@ -448,6 +456,9 @@ msgstr "Kopalnia"
 msgid "Descend\\Reduces the power of the jet"
 msgstr "W dół\\Zmniejsza moc silnika"
 
+msgid "Destroy"
+msgstr "Zniszcz"
+
 msgid "Destroy the building"
 msgstr "Zniszcz budynek"
 
@@ -476,8 +487,8 @@ msgstr "Czy na pewno chcesz zniszczyć zaznaczony budynek?"
 msgid "Do you want to delete %s's saved games? "
 msgstr "Czy na pewno chcesz skasować zapisane gry gracza %s? "
 
-msgid "Do you want to quit COLOBOT ?"
-msgstr "Czy na pewno chcesz opuścić grę COLOBOT?"
+msgid "Do you want to quit Colobot: Gold Edition?"
+msgstr "Czy na pewno chcesz opuścić grę Colobot: Gold Edition?"
 
 msgid "Doors blocked by a robot or another object "
 msgstr "Drzwi zablokowane przez robota lub inny obiekt "
@@ -526,6 +537,9 @@ msgstr "Ćwiczenia\\Ćwiczenia programistyczne"
 
 msgid "Exit film\\Film at the exit of exercises"
 msgstr "Końcowy film\\Film na zakończenie ćwiczeń"
+
+msgid "Explode (\\key action;)"
+msgstr "Wysadź (\\key action;)"
 
 msgid "Explosive"
 msgstr "Materiały wybuchowe"
@@ -624,10 +638,6 @@ msgstr "Gra\\Ustawienia gry"
 msgid "Gantry crane"
 msgstr "Żuraw przesuwalny"
 
-#, c-format
-msgid "GetResource event num out of range: %d\n"
-msgstr ""
-
 msgid "Goto: destination occupied"
 msgstr "Goto: miejsce docelowe zajęte"
 
@@ -698,6 +708,9 @@ msgstr "Nieodpowiedni robot"
 msgid "Inappropriate cell type"
 msgstr "Nieodpowiedni rodzaj ogniw"
 
+msgid "Inappropriate object"
+msgstr "Nieodpowiedni obiekt"
+
 msgid "Incorrect index type"
 msgstr "Nieprawidłowy typ indeksu"
 
@@ -733,6 +746,9 @@ msgstr "Rozkazy z Houston"
 
 msgid "Instructions\\Shows the instructions for the current mission"
 msgstr "Rozkazy\\Pokazuje rozkazy dotyczące bieżącej misji"
+
+msgid "Internal error - tell the developers"
+msgstr "Błąd wewnętrzny - powiadom twórców gry"
 
 msgid "Jet temperature"
 msgstr "Temperatura silnika"
@@ -804,9 +820,6 @@ msgstr "Znaki na ziemi\\Znaki na ziemi"
 
 msgid "Maximize"
 msgstr "Powiększ"
-
-msgid "Menu (\\key quit;)"
-msgstr "Menu (\\key quit;)"
 
 msgid "Minimize"
 msgstr "Pomniejsz"
@@ -915,6 +928,9 @@ msgstr "Za mało energii"
 
 msgid "Not enough energy yet"
 msgstr "Wciąż za mało energii"
+
+msgid "Not found anything to destroy"
+msgstr "Nie znaleziono nic do zniszczenia"
 
 msgid "Not yet enough energy"
 msgstr "Wciąż za mało energii"
@@ -1128,8 +1144,8 @@ msgstr "Wstrząsy przy wybuchach\\Ekran trzęsie się podczas wybuchów"
 msgid "Quit the mission?"
 msgstr "Opuścić misję?"
 
-msgid "Quit\\Quit COLOBOT"
-msgstr "Zakończ\\Kończy grę COLOBOT"
+msgid "Quit\\Quit Colobot: Gold Edition"
+msgstr "Wyjdź\\Kończy grę Colobot: Gold Edition"
 
 msgid "Quit\\Quit the current mission or exercise"
 msgstr "Zakończ\\Kończy bieżącą misję lub ćwiczenie"
@@ -1270,9 +1286,6 @@ msgstr "Zasięg osłony"
 
 msgid "Shielder"
 msgstr "Osłaniacz"
-
-msgid "Shift"
-msgstr "Shift"
 
 msgid "Shoot (\\key action;)"
 msgstr "Strzelaj (\\key action;)"
@@ -1585,9 +1598,6 @@ msgstr "Działo na kołach"
 msgid "Wheeled sniffer"
 msgstr "Szperacz na kołach"
 
-msgid "Win"
-msgstr ""
-
 msgid "Winged grabber"
 msgstr "Transporter latający"
 
@@ -1684,8 +1694,8 @@ msgstr "\\Relčve le crayon"
 msgid "\\Red flags"
 msgstr "\\Czerwone flagi"
 
-msgid "\\Return to COLOBOT"
-msgstr "\\Powróć do gry COLOBOT"
+msgid "\\Return to Colobot: Gold Edition"
+msgstr "\\Powróć do gry Colobot: Gold Edition"
 
 msgid "\\SatCom on standby"
 msgstr "\\Przełącz przekaźnik SatCom w stan gotowości"
@@ -1753,302 +1763,5 @@ msgstr "\\b;Roboty\n"
 msgid "\\c; (none)\\n;\n"
 msgstr "\\c; (brak)\\n;\n"
 
-msgid "action;"
-msgstr ""
-
-msgid "away;"
-msgstr ""
-
-msgid "camera;"
-msgstr ""
-
-msgid "cbot;"
-msgstr ""
-
-msgid "desel;"
-msgstr ""
-
-msgid "down;"
-msgstr ""
-
-msgid "gdown;"
-msgstr ""
-
-msgid "gup;"
-msgstr ""
-
-msgid "help;"
-msgstr ""
-
-msgid "human;"
-msgstr ""
-
-msgid "left;"
-msgstr ""
-
-msgid "near;"
-msgstr ""
-
-msgid "next;"
-msgstr ""
-
-msgid "prog;"
-msgstr ""
-
-msgid "quit;"
-msgstr ""
-
-msgid "right;"
-msgstr ""
-
-msgid "speed10;"
-msgstr ""
-
-msgid "speed15;"
-msgstr ""
-
-msgid "speed20;"
-msgstr ""
-
-msgid "up;"
-msgstr ""
-
-msgid "visit;"
-msgstr ""
-
 msgid "www.epsitec.com"
 msgstr "www.epsitec.com"
-
-#~ msgid "< none >"
-#~ msgstr "< brak >"
-
-#~ msgid "<--"
-#~ msgstr "<--"
-
-#~ msgid "Application key"
-#~ msgstr "Klawisz menu kontekstowego"
-
-#~ msgid "Arrow down"
-#~ msgstr "Strzałka w dół"
-
-#~ msgid "Arrow left"
-#~ msgstr "Strzałka w lewo"
-
-#~ msgid "Arrow right"
-#~ msgstr "Strzałka w prawo"
-
-#~ msgid "Arrow up"
-#~ msgstr "Strzałka w górę"
-
-#~ msgid "Attn"
-#~ msgstr "Attn"
-
-#~ msgid "Caps Lock"
-#~ msgstr "Caps Lock"
-
-#~ msgid "Clear"
-#~ msgstr "Delete"
-
-#~ msgid "Control-break"
-#~ msgstr "Ctrl-break"
-
-#~ msgid "CrSel"
-#~ msgstr "CrSel"
-
-#~ msgid "Delete Key"
-#~ msgstr "Delete"
-
-#~ msgid "Dictionnary"
-#~ msgstr "Raport z satelity"
-
-#~ msgid "Disintegrator"
-#~ msgstr "Fabryka ogniw elektrycznych"
-
-#~ msgid "End"
-#~ msgstr "End"
-
-#~ msgid "Enter"
-#~ msgstr "Enter"
-
-#~ msgid "Erase EOF"
-#~ msgstr "Erase EOF"
-
-#~ msgid "Error"
-#~ msgstr "Błąd"
-
-#~ msgid "Esc"
-#~ msgstr "Esc"
-
-#~ msgid "ExSel"
-#~ msgstr "ExSel"
-
-#~ msgid "Execute"
-#~ msgstr "Wykonaj"
-
-#~ msgid "F1"
-#~ msgstr "F1"
-
-#~ msgid "F10"
-#~ msgstr "F10"
-
-#~ msgid "F11"
-#~ msgstr "F11"
-
-#~ msgid "F12"
-#~ msgstr "F12"
-
-#~ msgid "F13"
-#~ msgstr "F13"
-
-#~ msgid "F14"
-#~ msgstr "F14"
-
-#~ msgid "F15"
-#~ msgstr "F15"
-
-#~ msgid "F16"
-#~ msgstr "F16"
-
-#~ msgid "F17"
-#~ msgstr "F17"
-
-#~ msgid "F18"
-#~ msgstr "F18"
-
-#~ msgid "F19"
-#~ msgstr "F19"
-
-#~ msgid "F2"
-#~ msgstr "F2"
-
-#~ msgid "F20"
-#~ msgstr "F20"
-
-#~ msgid "F3"
-#~ msgstr "F3"
-
-#~ msgid "F4"
-#~ msgstr "F4"
-
-#~ msgid "F5"
-#~ msgstr "F5"
-
-#~ msgid "F6"
-#~ msgstr "F6"
-
-#~ msgid "F7"
-#~ msgstr "F7"
-
-#~ msgid "F8"
-#~ msgstr "F8"
-
-#~ msgid "F9"
-#~ msgstr "F9"
-
-#~ msgid "Help"
-#~ msgstr "Pomoc"
-
-#~ msgid "Home Key"
-#~ msgstr "Home"
-
-#~ msgid "Insert"
-#~ msgstr "Insert"
-
-#~ msgid "Left Windows"
-#~ msgstr "Lewy klawisz Windows"
-
-#~ msgid "Mini-map"
-#~ msgstr "Mapka"
-
-#~ msgid "Num Lock"
-#~ msgstr "Num Lock"
-
-#~ msgid "NumPad *"
-#~ msgstr "Klaw. Num. *"
-
-#~ msgid "NumPad +"
-#~ msgstr "Klaw. Num. +"
-
-#~ msgid "NumPad -"
-#~ msgstr "Klaw. Num. -"
-
-#~ msgid "NumPad ."
-#~ msgstr "Klaw. Num. ."
-
-#~ msgid "NumPad /"
-#~ msgstr "Klaw. Num. /"
-
-#~ msgid "NumPad 0"
-#~ msgstr "Klaw. Num. 0"
-
-#~ msgid "NumPad 1"
-#~ msgstr "Klaw. Num. 1"
-
-#~ msgid "NumPad 2"
-#~ msgstr "Klaw. Num. 2"
-
-#~ msgid "NumPad 3"
-#~ msgstr "Klaw. Num. 3"
-
-#~ msgid "NumPad 4"
-#~ msgstr "Klaw. Num. 4"
-
-#~ msgid "NumPad 5"
-#~ msgstr "Klaw. Num. 5"
-
-#~ msgid "NumPad 6"
-#~ msgstr "Klaw. Num. 6"
-
-#~ msgid "NumPad 7"
-#~ msgstr "Klaw. Num. 7"
-
-#~ msgid "NumPad 8"
-#~ msgstr "Klaw. Num. 8"
-
-#~ msgid "NumPad 9"
-#~ msgstr "Klaw. Num. 9"
-
-#~ msgid "NumPad sep"
-#~ msgstr "Klaw. Num. separator"
-
-#~ msgid "PA1"
-#~ msgstr "PA1"
-
-#~ msgid "Page Down"
-#~ msgstr "Page Down"
-
-#~ msgid "Page Up"
-#~ msgstr "Page Up"
-
-#~ msgid "Pause"
-#~ msgstr "Pause"
-
-#~ msgid "Play"
-#~ msgstr "Graj"
-
-#~ msgid "Print Scrn"
-#~ msgstr "Print Scrn"
-
-#~ msgid "Right Windows"
-#~ msgstr "Prawy klawisz Windows"
-
-#~ msgid "Scroll"
-#~ msgstr "Scroll Lock"
-
-#~ msgid "Select"
-#~ msgstr "Zaznacz"
-
-#~ msgid "Space"
-#~ msgstr "Spacja"
-
-#~ msgid "Tab"
-#~ msgstr "Tab"
-
-#~ msgid "Wheel down"
-#~ msgstr "Kółko w dół"
-
-#~ msgid "Wheel up"
-#~ msgstr "Kółko w górę"
-
-#~ msgid "Zoom"
-#~ msgstr "Powiększenie"

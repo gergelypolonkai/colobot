@@ -2,20 +2,19 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-12-27 17:09+0100\n"
+"POT-Creation-Date: DATE\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Translate Toolkit 1.11.0\n"
 "X-Language: ru_RU\n"
 "X-Source-Language: en_US\n"
 
@@ -33,9 +32,6 @@ msgstr " Драйверы:"
 
 msgid " Exercises in the chapter:"
 msgstr " Упражнения в разделе:"
-
-msgid " Free game on this chapter:"
-msgstr " Свободная игра на этой главе:"
 
 msgid " Free game on this planet:"
 msgstr " Свободная игра на этой планете:"
@@ -70,9 +66,6 @@ msgstr "Отсутствует \"]\" "
 #, c-format
 msgid "\"%s\" missing in this exercise"
 msgstr "\"%s\" отсутствует в этом упражнении"
-
-msgid "%1"
-msgstr "%1"
 
 msgid "..behind"
 msgstr "Сзади"
@@ -129,9 +122,6 @@ msgstr "Королева чужих убита"
 msgid "Already carrying something"
 msgstr "Уже что-то несу"
 
-msgid "Alt"
-msgstr "Alt"
-
 msgid "Analysis already performed"
 msgstr "Анализ уже выполнен"
 
@@ -186,6 +176,9 @@ msgstr "Большой отступ\\Отступать на 2 или 4 проб
 msgid "Black box"
 msgstr "Черный ящик"
 
+msgid "Blood\\Display blood when the astronaut or the alien queen is hit"
+msgstr ""
+
 msgid "Blue"
 msgstr "Синий"
 
@@ -209,6 +202,9 @@ msgstr "Построить защитную башню"
 
 msgid "Build a derrick"
 msgstr "Построить буровую вышку"
+
+msgid "Build a destroyer"
+msgstr ""
 
 msgid "Build a exchange post"
 msgstr "Построить пост по обмену сообщениями"
@@ -312,12 +308,6 @@ msgstr "Здание слишком близко"
 msgid "Button %1"
 msgstr "Кнопка %1"
 
-msgid "COLOBOT"
-msgstr "КОЛОБОТ"
-
-msgid "COLOBOT: Gold Edition"
-msgstr ""
-
 msgid "Calling an unknown function"
 msgstr "Вызов неизвестной функции"
 
@@ -344,6 +334,12 @@ msgstr "Камеру вправо"
 
 msgid "Can not create this; there are too many objects"
 msgstr "Не удается это создать, слишком много объектов"
+
+msgid "Can not produce not researched object"
+msgstr ""
+
+msgid "Can not produce this object in this mission"
+msgstr ""
 
 msgid "Can't open file"
 msgstr "Невозможно открыть файл"
@@ -387,6 +383,9 @@ msgstr "Закрывающая скобка отсутствует"
 msgid "Colobot rules!"
 msgstr "Правила игры!"
 
+msgid "Colobot: Gold Edition"
+msgstr ""
+
 msgid "Command line"
 msgstr "Командная строка"
 
@@ -420,9 +419,6 @@ msgstr "Копировать"
 msgid "Copy (Ctrl+c)"
 msgstr "Копировать (Ctrl+C)"
 
-msgid "Ctrl"
-msgstr "Ctrl"
-
 msgid "Current mission saved"
 msgstr "Текущая миссия сохранена"
 
@@ -453,6 +449,9 @@ msgstr "Космический корабль"
 msgid "Descend\\Reduces the power of the jet"
 msgstr "Снижение и посадка\\Понижение мощности реактивного двигателя"
 
+msgid "Destroy"
+msgstr ""
+
 msgid "Destroy the building"
 msgstr "Уничтожить здание"
 
@@ -481,7 +480,8 @@ msgstr "Вы действительно хотите уничтожить выб
 msgid "Do you want to delete %s's saved games? "
 msgstr "Вы действительно хотите удалить сохраненные игры игрока %s?"
 
-msgid "Do you want to quit COLOBOT ?"
+#, fuzzy
+msgid "Do you want to quit Colobot: Gold Edition?"
 msgstr "Вы хотите закрыть COLOBOT?"
 
 msgid "Doors blocked by a robot or another object "
@@ -531,6 +531,9 @@ msgstr "Упражнения\\Упражнения по программиров
 
 msgid "Exit film\\Film at the exit of exercises"
 msgstr "Ролик при выходе\\Ролик во время выхода из упражнения"
+
+msgid "Explode (\\key action;)"
+msgstr ""
 
 msgid "Explosive"
 msgstr "Взрывчатка"
@@ -629,10 +632,6 @@ msgstr "Игра\\Настройки игры"
 msgid "Gantry crane"
 msgstr "Козловой кран"
 
-#, c-format
-msgid "GetResource event num out of range: %d\n"
-msgstr "событие GetResource, число вне диапазона: %d\n"
-
 msgid "Goto: destination occupied"
 msgstr "Перейти: место занято"
 
@@ -702,6 +701,9 @@ msgstr "Неверный бот"
 msgid "Inappropriate cell type"
 msgstr "Батарея не подходит"
 
+msgid "Inappropriate object"
+msgstr ""
+
 msgid "Incorrect index type"
 msgstr "Неверный тип индекса"
 
@@ -737,6 +739,9 @@ msgstr "Инструкции из Хьюстона"
 
 msgid "Instructions\\Shows the instructions for the current mission"
 msgstr "Инструкции\\Показывает инструкции по текущей миссии"
+
+msgid "Internal error - tell the developers"
+msgstr ""
 
 msgid "Jet temperature"
 msgstr "Температура реактивного двигателя"
@@ -806,9 +811,6 @@ msgstr "Метки на земле\\Метки на земле"
 
 msgid "Maximize"
 msgstr "Развернуть"
-
-msgid "Menu (\\key quit;)"
-msgstr "Меню (\\key выйти;)"
 
 msgid "Minimize"
 msgstr "Свернуть"
@@ -917,6 +919,9 @@ msgstr "Не хватает энергии"
 
 msgid "Not enough energy yet"
 msgstr "Не хватает энергии"
+
+msgid "Not found anything to destroy"
+msgstr ""
 
 msgid "Not yet enough energy"
 msgstr "Не хватает энергии"
@@ -1131,8 +1136,8 @@ msgstr "Землетряс. при взрывах\\Тряска экрана п�
 msgid "Quit the mission?"
 msgstr "Завершить миссию?"
 
-msgid "Quit\\Quit COLOBOT"
-msgstr "Выход\\Выход из COLOBOT"
+msgid "Quit\\Quit Colobot: Gold Edition"
+msgstr ""
 
 msgid "Quit\\Quit the current mission or exercise"
 msgstr "Выход\\Выход из текущей миссии"
@@ -1271,9 +1276,6 @@ msgstr "Радиус щита"
 
 msgid "Shielder"
 msgstr "Передвижной щит"
-
-msgid "Shift"
-msgstr "Shift"
 
 msgid "Shoot (\\key action;)"
 msgstr "Огонь (\\key action;)"
@@ -1586,9 +1588,6 @@ msgstr "Колесный стрелок"
 msgid "Wheeled sniffer"
 msgstr "Колесный искатель"
 
-msgid "Win"
-msgstr "Win"
-
 msgid "Winged grabber"
 msgstr "Летающий сборщик"
 
@@ -1685,8 +1684,8 @@ msgstr "\\Поднять перо"
 msgid "\\Red flags"
 msgstr "\\Красный флаг"
 
-msgid "\\Return to COLOBOT"
-msgstr "\\Вернуться в COLOBOT"
+msgid "\\Return to Colobot: Gold Edition"
+msgstr ""
 
 msgid "\\SatCom on standby"
 msgstr "\\SatCom ждет"
@@ -1754,68 +1753,14 @@ msgstr "\\b;Роботы\n"
 msgid "\\c; (none)\\n;\n"
 msgstr "\\c; (нет)\\n;\n"
 
-msgid "action;"
-msgstr "действие"
-
-msgid "away;"
-msgstr "дальше"
-
-msgid "camera;"
-msgstr "камера"
-
-msgid "cbot;"
-msgstr "cobt"
-
-msgid "desel;"
-msgstr "отмена"
-
-msgid "down;"
-msgstr "вниз"
-
-msgid "gdown;"
-msgstr "вниз"
-
-msgid "gup;"
-msgstr "вверх"
-
-msgid "help;"
-msgstr "помощь"
-
-msgid "human;"
-msgstr "человек"
-
-msgid "left;"
-msgstr "влево"
-
-msgid "near;"
-msgstr "ближе"
-
-msgid "next;"
-msgstr "следующий"
-
-msgid "prog;"
-msgstr "прог."
-
-msgid "quit;"
-msgstr "выйти"
-
-msgid "right;"
-msgstr "вправо"
-
-msgid "speed10;"
-msgstr "скорость10"
-
-msgid "speed15;"
-msgstr "скорость15"
-
-msgid "speed20;"
-msgstr "скорость20"
-
-msgid "up;"
-msgstr "вверх"
-
-msgid "visit;"
-msgstr "посетить"
-
 msgid "www.epsitec.com"
 msgstr "www.epsitec.com"
+
+#~ msgid "COLOBOT"
+#~ msgstr "КОЛОБОТ"
+
+#~ msgid "Quit\\Quit COLOBOT"
+#~ msgstr "Выход\\Выход из COLOBOT"
+
+#~ msgid "\\Return to COLOBOT"
+#~ msgstr "\\Вернуться в COLOBOT"

@@ -1,19 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "graphics/engine/pyro.h"
@@ -312,7 +314,7 @@ bool CPyro::Create(PyroType type, CObject* obj, float force)
     }
     if ( m_type == PT_SHOTH )
     {
-        if ( m_object->GetSelect() )
+        if ( m_camera->GetBlood() && m_object->GetSelect() )
         {
             m_camera->StartOver(CAM_OVER_EFFECT_BLOOD, m_pos, force);
         }
@@ -672,7 +674,7 @@ bool CPyro::EventProcess(const Event &event)
         }
     }
 
-    if ( m_type == PT_SHOTH &&
+    if ( m_camera->GetBlood() && m_type == PT_SHOTH &&
          m_lastParticle+m_engine->ParticleAdapt(0.05f) <= m_time )
     {
         m_lastParticle = m_time;
@@ -694,7 +696,7 @@ bool CPyro::EventProcess(const Event &event)
         }
     }
 
-    if ( m_type == PT_SHOTM &&
+    if ( m_camera->GetBlood() && m_type == PT_SHOTM &&
          m_lastParticle+m_engine->ParticleAdapt(0.05f) <= m_time )
     {
         m_lastParticle = m_time;
@@ -1594,7 +1596,7 @@ void CPyro::ExploStart()
         if (channel != -1)
             m_object->SetMasterParticle(i, channel);
     }
-    m_engine->LoadTexture("dirty04.png");
+    m_engine->LoadTexture("textures/dirty04.png");
 
     DeleteObject(false, true);  // destroys the object transported + the battery
 }
@@ -1637,7 +1639,7 @@ void CPyro::BurnStart()
             m_engine->ChangeSecondTexture(objRank, "dirty04.png");
         }
     }
-    m_engine->LoadTexture("dirty04.png");
+    m_engine->LoadTexture("textures/dirty04.png");
 
     m_burnPartTotal = 0;
 

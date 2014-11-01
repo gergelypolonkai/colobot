@@ -1,18 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 /**
  * \file object/robotmain.h
@@ -44,7 +47,6 @@ enum Phase
     PHASE_DEFI,
     PHASE_MISSION,
     PHASE_FREE,
-    PHASE_TEEN,
     PHASE_USER,
     PHASE_LOADING,
     PHASE_SIMUL,
@@ -208,6 +210,8 @@ public:
     void        LoadSceneOnStart(const std::string& name, int rank);
 
     void        CreateIni();
+    
+    void        ResetAfterDeviceChanged();
 
     //! Sets the default input bindings (key and axes)
     void        SetDefaultInputBindings();
@@ -327,6 +331,7 @@ public:
     bool        GetSceneSoluce();
     bool        GetShowAll();
     bool        GetRadar();
+    const char* GetPHYSFSSavegameDir();
     const char* GetSavegameDir();
     const char* GetPublicDir();
     const char* GetFilesDir();
@@ -338,6 +343,9 @@ public:
     int         GetGamerGlasses();
     bool        GetGamerOnlyHead();
     float       GetPersoAngle();
+    char*       GetSceneName();
+    int         GetSceneRank();
+    void        BuildSceneName(std::string &filename, char *base, int rank, bool sceneFile = true);
 
     void        StartMusic();
     void        StartPauseMusic(PauseType pause);
@@ -387,13 +395,16 @@ public:
 
     void        DisplayError(Error err, CObject* pObj, float time=10.0f);
     void        DisplayError(Error err, Math::Vector goal, float height=15.0f, float dist=60.0f, float time=10.0f);
+    
+    std::string& GetUserLevelName(int id);
+    
+    void        StartMissionTimer();
 
 protected:
     bool        EventFrame(const Event &event);
     bool        EventObject(const Event &event);
     void        InitEye();
 
-    void        Convert();
     void        CreateScene(bool soluce, bool fixScene, bool resetObject);
 
     Math::Vector LookatPoint(Math::Vector eye, float angleH, float angleV, float length);
@@ -470,7 +481,6 @@ protected:
     Gfx::Color      m_color;
     bool            m_freePhoto;
     bool            m_cmdEdit;
-    bool            m_showPos;
     bool            m_selectInsect;
     bool            m_showSoluce;
     bool            m_showAll;
@@ -486,13 +496,6 @@ protected:
     int             m_movieInfoIndex;
 
     CObject*        m_controller;
-
-    // Level Checker flags
-    bool            m_beginObject;
-    bool            m_terrainGenerate;
-    bool            m_terrainInitTextures;
-    bool            m_terrainInit;
-    bool            m_terrainCreate;
 
     int             m_version;         // Mission file version
     bool            m_retroStyle;      // Retro
@@ -588,5 +591,9 @@ protected:
     float           m_colorShiftWater;
 
     std::string     m_oldLocale;
+    
+    bool            m_missionTimerEnabled;
+    bool            m_missionTimerStarted;
+    float           m_missionTimer;
 };
 

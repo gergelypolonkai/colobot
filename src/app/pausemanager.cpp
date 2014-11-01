@@ -1,19 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 #include "app/app.h"
 #include "app/pausemanager.h"
@@ -29,7 +31,7 @@ template<> CPauseManager* CSingleton<CPauseManager>::m_instance = nullptr;
 CPauseManager::CPauseManager()
 {
     m_sound = CApplication::GetInstancePointer()->GetSound();
-    
+
     m_pause = PAUSE_NONE;
 }
 
@@ -40,24 +42,28 @@ CPauseManager::~CPauseManager()
 
 void CPauseManager::SetPause(PauseType pause)
 {
-    if(pause != PAUSE_NONE) {
-        if(m_pause != pause) {
+    if (pause != PAUSE_NONE)
+    {
+        if (m_pause != pause)
+        {
             CLogger::GetInstancePointer()->Info("Game paused - %s\n", GetPauseName(pause).c_str());
             CRobotMain::GetInstancePointer()->StartPauseMusic(pause);
         }
-        
+
         m_pause = pause;
-    } else
+    }
+    else
         ClearPause();
 }
 
 void CPauseManager::ClearPause()
 {
-    if(m_pause != PAUSE_NONE) {
+    if(m_pause != PAUSE_NONE)
+    {
         CLogger::GetInstancePointer()->Info("Game resumed\n");
         m_sound->StopPauseMusic();
     }
-    
+
     m_pause = PAUSE_NONE;
 }
 

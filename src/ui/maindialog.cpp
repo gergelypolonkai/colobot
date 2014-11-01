@@ -1,24 +1,26 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "ui/maindialog.h"
 
 #include "app/app.h"
-#include "app/gamedata.h"
 #include "app/system.h"
 
 #include "common/config.h"
@@ -29,6 +31,12 @@
 #include "common/profile.h"
 #include "common/restext.h"
 #include "common/stringutils.h"
+
+#include "common/resources/resourcemanager.h"
+#include "common/resources/inputstream.h"
+#include "common/resources/outputstream.h"
+
+#include "object/level/parser.h"
 
 #include "object/robotmain.h"
 
@@ -162,6 +170,7 @@ CMainDialog::CMainDialog()
     m_bCameraInvertX = false;
     m_bCameraInvertY = false;
     m_bEffect        = true;
+    m_bBlood         = true;
     m_shotDelay      = 0;
 
     m_glintMouse = Math::Point(0.0f, 0.0f);
@@ -173,18 +182,10 @@ CMainDialog::CMainDialog()
         m_partiTime[i]  = 0.0f;
     }
 
-
-    m_sceneDir = "levels";
-
-    #if DEV_BUILD
     m_savegameDir = "savegame";
-    #else
-    m_savegameDir = GetSystemUtils()->GetSavegameDirectoryLocation();
-    #endif
-
-    m_publicDir = "program";
-    m_userDir = "user";
-    m_filesDir = m_savegameDir;
+    m_publicDir = CResourceManager::GetSaveLocation()+"/program"; //TODO: Refactor to use PHYSFS
+    m_filesDir = CResourceManager::GetSaveLocation()+"/files"; //TODO: Refactor to use PHYSFS
+    CLogger::GetInstancePointer()->Trace("Savegame path: normal=%s, physfs=%s\n", GetSavegameDir().c_str(), GetPHYSFSSavegameDir().c_str());
 
     m_setupFull = m_app->GetVideoConfig().fullScreen;
 
@@ -315,7 +316,6 @@ void CMainDialog::ChangePhase(Phase phase)
         pb = pw->CreateButton(pos, ddim, -1, EVENT_INTERFACE_QUIT);
         pb->SetState(STATE_SHADOW);
 
-        #if DEV_BUILD
         if ( m_accessEnable && m_accessUser )
         {
             pos.x  = 447.0f/640.0f;
@@ -323,8 +323,22 @@ void CMainDialog::ChangePhase(Phase phase)
             ddim.x = 0.09f;
             pb = pw->CreateButton(pos, ddim, -1, EVENT_INTERFACE_USER);
             pb->SetState(STATE_SHADOW);
+            
+            try {
+                CLevelParser* level = new CLevelParser("levels/custom/config.txt");
+                if(level->Exists()) {
+                    level->Load();
+                    CLevelParserLine* line = level->Get("Button");
+                    if(line->GetParam("name")->IsDefined())
+                        pb->SetName(line->GetParam("name")->AsString());
+                    if(line->GetParam("tooltip")->IsDefined())
+                        pb->SetTooltip(line->GetParam("tooltip")->AsString());
+                }
+            }
+            catch(CLevelParserException& e) {
+                CLogger::GetInstancePointer()->Error("Failed loading userlevel button name: %s\n", e.what());
+            }
         }
-        #endif
 
         /*pos.x  = 139.0f/640.0f;
         pos.y  = 313.0f/480.0f;
@@ -339,11 +353,11 @@ void CMainDialog::ChangePhase(Phase phase)
         pg = pw->CreateGroup(pos, ddim, 1, EVENT_LABEL1);
         pg->SetState(STATE_SHADOW);
         pos.y -=  5.0f/480.0f;
-        pl = pw->CreateLabel(pos, ddim, 0, EVENT_LABEL1, "PPC Team");
+        pl = pw->CreateLabel(pos, ddim, 0, EVENT_LABEL1, "TerranovaTeam");
         pl->SetFontType(Gfx::FONT_COURIER);
         pl->SetFontSize(Gfx::FONT_SIZE_SMALL);
 
-        m_engine->SetBackground("interface.png",
+        m_engine->SetBackground("interface/interface.png",
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
@@ -450,7 +464,7 @@ void CMainDialog::ChangePhase(Phase phase)
         UpdateNameControl();
         UpdateNameFace();
 
-        m_engine->SetBackground("interface.png",
+        m_engine->SetBackground("interface/interface.png",
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
@@ -703,7 +717,6 @@ void CMainDialog::ChangePhase(Phase phase)
             m_phase == PHASE_DEFI    ||
             m_phase == PHASE_MISSION ||
             m_phase == PHASE_FREE    ||
-            m_phase == PHASE_TEEN    ||
             m_phase == PHASE_USER    )
     {
         if ( m_phase == PHASE_TRAINER )  m_index = 0;
@@ -711,21 +724,19 @@ void CMainDialog::ChangePhase(Phase phase)
         if ( m_phase == PHASE_MISSION )  m_index = 2;
         if ( m_phase == PHASE_FREE    )  m_index = 3;
         if ( m_phase == PHASE_USER    )  m_index = 4;
-        if ( m_phase == PHASE_TEEN    )  m_index = 6;
 
         if ( m_phase == PHASE_FREE )
         {
-            strcpy(m_sceneName, "scene");
+            strcpy(m_sceneName, "missions");
             ReadGamerInfo();
             m_accessChap = GetChapPassed();
         }
 
-        if ( m_phase == PHASE_TRAINER )  strcpy(m_sceneName, "train");
-        if ( m_phase == PHASE_DEFI    )  strcpy(m_sceneName, "defi" );
-        if ( m_phase == PHASE_MISSION )  strcpy(m_sceneName, "scene");
-        if ( m_phase == PHASE_FREE    )  strcpy(m_sceneName, "free");
-        if ( m_phase == PHASE_TEEN    )  strcpy(m_sceneName, "teen");
-        if ( m_phase == PHASE_USER    )  strcpy(m_sceneName, "user");
+        if ( m_phase == PHASE_TRAINER )  strcpy(m_sceneName, "exercises");
+        if ( m_phase == PHASE_DEFI    )  strcpy(m_sceneName, "challenges" );
+        if ( m_phase == PHASE_MISSION )  strcpy(m_sceneName, "missions");
+        if ( m_phase == PHASE_FREE    )  strcpy(m_sceneName, "freemissions");
+        if ( m_phase == PHASE_USER    )  strcpy(m_sceneName, "custom");
 
         ReadGamerInfo();
 
@@ -739,7 +750,6 @@ void CMainDialog::ChangePhase(Phase phase)
         if ( m_phase == PHASE_DEFI    )  res = RT_TITLE_DEFI;
         if ( m_phase == PHASE_MISSION )  res = RT_TITLE_MISSION;
         if ( m_phase == PHASE_FREE    )  res = RT_TITLE_FREE;
-        if ( m_phase == PHASE_TEEN    )  res = RT_TITLE_TEEN;
         if ( m_phase == PHASE_USER    )  res = RT_TITLE_USER;
         GetResource(RES_TEXT, res, name);
         pw->SetName(name);
@@ -764,7 +774,6 @@ void CMainDialog::ChangePhase(Phase phase)
         if ( m_phase == PHASE_DEFI    )  res = RT_PLAY_CHAPd;
         if ( m_phase == PHASE_MISSION )  res = RT_PLAY_CHAPm;
         if ( m_phase == PHASE_FREE    )  res = RT_PLAY_CHAPf;
-        if ( m_phase == PHASE_TEEN    )  res = RT_PLAY_CHAPte;
         if ( m_phase == PHASE_USER    )  res = RT_PLAY_CHAPu;
         GetResource(RES_TEXT, res, name);
         pl = pw->CreateLabel(pos, ddim, 0, EVENT_LABEL11, name);
@@ -787,7 +796,6 @@ void CMainDialog::ChangePhase(Phase phase)
         if ( m_phase == PHASE_DEFI    )  res = RT_PLAY_LISTd;
         if ( m_phase == PHASE_MISSION )  res = RT_PLAY_LISTm;
         if ( m_phase == PHASE_FREE    )  res = RT_PLAY_LISTf;
-        if ( m_phase == PHASE_TEEN    )  res = RT_PLAY_LISTk;
         if ( m_phase == PHASE_USER    )  res = RT_PLAY_LISTu;
         GetResource(RES_TEXT, res, name);
         pl = pw->CreateLabel(pos, ddim, 0, EVENT_LABEL12, name);
@@ -824,8 +832,7 @@ void CMainDialog::ChangePhase(Phase phase)
 
         // Button displays the "soluce":
         if ( m_phase != PHASE_TRAINER &&
-                m_phase != PHASE_FREE    &&
-                m_phase != PHASE_TEEN    )
+                m_phase != PHASE_FREE    )
         {
             pos.x = ox+sx*9.5f;
             pos.y = oy+sy*5.8f;
@@ -882,7 +889,7 @@ void CMainDialog::ChangePhase(Phase phase)
         pb = pw->CreateButton(pos, ddim, -1, EVENT_INTERFACE_BACK);
         pb->SetState(STATE_SHADOW);
 
-        m_engine->SetBackground("interface.png",
+        m_engine->SetBackground("interface/interface.png",
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
@@ -962,6 +969,9 @@ void CMainDialog::ChangePhase(Phase phase)
         pb->SetState(STATE_SHADOW);
         pb->SetState(STATE_CARD);
         pb->SetState(STATE_CHECK, (m_phase == PHASE_SETUPd || m_phase == PHASE_SETUPds));
+        #if PLATFORM_WINDOWS
+        pb->SetState(STATE_ENABLE, !m_bSimulSetup);
+        #endif
 
         pos.x += ddim.x+0.01f;
         pb = pw->CreateButton(pos, ddim, -1, EVENT_INTERFACE_SETUPg);
@@ -1007,7 +1017,7 @@ void CMainDialog::ChangePhase(Phase phase)
 
         if ( !m_bSimulSetup )
         {
-            m_engine->SetBackground("interface.png",
+            m_engine->SetBackground("interface/interface.png",
                     Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                     Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                     Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
@@ -1044,6 +1054,14 @@ void CMainDialog::ChangePhase(Phase phase)
         pc = pw->CreateCheck(pos, ddim, -1, EVENT_INTERFACE_FULL);
         pc->SetState(STATE_SHADOW);
         pc->SetState(STATE_CHECK, m_setupFull);
+        
+        #if !PLATFORM_LINUX
+        ddim.x = 0.9f;
+        ddim.y = 0.1f;
+        pos.x = 0.05f;
+        pos.y = 0.20f;
+        pl = pw->CreateLabel(pos, ddim, 0, EVENT_LABEL1, "The game will be restarted in order to apply changes. All unsaved progress will be lost.");
+        #endif
 
         ddim.x = dim.x*6;
         ddim.y = dim.y*1;
@@ -1222,6 +1240,9 @@ void CMainDialog::ChangePhase(Phase phase)
         pc->SetState(STATE_SHADOW);
         pos.y -= 0.048f;
         pc = pw->CreateCheck(pos, ddim, -1, EVENT_INTERFACE_EFFECT);
+        pc->SetState(STATE_SHADOW);
+        pos.y -= 0.048f;
+        pc = pw->CreateCheck(pos, ddim, -1, EVENT_INTERFACE_BLOOD);
         pc->SetState(STATE_SHADOW);
         //?     pos.y -= 0.048f;
         //?     pc = pw->CreateCheck(pos, ddim, -1, EVENT_INTERFACE_NICERST);
@@ -1496,7 +1517,7 @@ void CMainDialog::ChangePhase(Phase phase)
 
         if ( m_phase == PHASE_READ )
         {
-            m_engine->SetBackground("interface.png",
+            m_engine->SetBackground("interface/interface.png",
                     Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                     Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                     Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
@@ -1543,7 +1564,7 @@ void CMainDialog::ChangePhase(Phase phase)
         pl->SetFontSize(12.0f);
         pl->SetTextAlign(Gfx::TEXT_ALIGN_CENTER);
 
-        m_engine->SetBackground("interface.png",
+        m_engine->SetBackground("interface/interface.png",
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
@@ -1565,7 +1586,7 @@ void CMainDialog::ChangePhase(Phase phase)
         m_engine->SetOverColor(Gfx::Color(1.0f, 1.0f, 1.0f, 1.0f), Gfx::ENG_RSTATE_TCOLOR_BLACK); // TODO: color ok?
         m_engine->SetOverFront(true);
 
-        m_engine->SetBackground("ppc.png",
+        m_engine->SetBackground("interface/intro1.png",
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
@@ -1584,7 +1605,7 @@ void CMainDialog::ChangePhase(Phase phase)
         m_engine->SetOverColor(Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f), Gfx::ENG_RSTATE_TCOLOR_WHITE); // TODO: color ok?
         m_engine->SetOverFront(true);
 
-        m_engine->SetBackground("colobot.png",
+        m_engine->SetBackground("interface/intro2.png",
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
@@ -1603,7 +1624,7 @@ void CMainDialog::ChangePhase(Phase phase)
         m_engine->SetOverColor(Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f), Gfx::ENG_RSTATE_TCOLOR_WHITE); // TODO: color ok?
         m_engine->SetOverFront(true);
 
-        m_engine->SetBackground("epsitec.png",
+        m_engine->SetBackground("interface/intro3.png",
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
@@ -1669,7 +1690,7 @@ void CMainDialog::ChangePhase(Phase phase)
         pb = pw->CreateButton(pos, ddim, 49, EVENT_INTERFACE_ABORT);
         pb->SetState(STATE_SHADOW);
 
-        m_engine->SetBackground("generico.png",
+        m_engine->SetBackground("interface/generico.png",
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
                 Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f),
@@ -1684,7 +1705,6 @@ void CMainDialog::ChangePhase(Phase phase)
             m_phase == PHASE_DEFI    ||
             m_phase == PHASE_MISSION ||
             m_phase == PHASE_FREE    ||
-            m_phase == PHASE_TEEN    ||
             m_phase == PHASE_USER    ||
             m_phase == PHASE_SETUPd  ||
             m_phase == PHASE_SETUPg  ||
@@ -1880,6 +1900,9 @@ bool CMainDialog::EventProcess(const Event &event)
         {
             StopDialog();
             StartSuspend();
+            #if PLATFORM_WINDOWS
+            if ( m_phaseSetup == PHASE_SETUPd ) m_phaseSetup = PHASE_SETUPg;
+            #endif
             if ( m_phaseSetup == PHASE_SETUPd )  ChangePhase(PHASE_SETUPds);
             if ( m_phaseSetup == PHASE_SETUPg )  ChangePhase(PHASE_SETUPgs);
             if ( m_phaseSetup == PHASE_SETUPp )  ChangePhase(PHASE_SETUPps);
@@ -1946,10 +1969,6 @@ bool CMainDialog::EventProcess(const Event &event)
 
             case EVENT_INTERFACE_FREE:
                 m_main->ChangePhase(PHASE_FREE);
-                break;
-
-            case EVENT_INTERFACE_TEEN:
-                m_main->ChangePhase(PHASE_TEEN);
                 break;
 
             case EVENT_INTERFACE_USER:
@@ -2158,7 +2177,6 @@ bool CMainDialog::EventProcess(const Event &event)
             m_phase == PHASE_DEFI    ||
             m_phase == PHASE_MISSION ||
             m_phase == PHASE_FREE    ||
-            m_phase == PHASE_TEEN    ||
             m_phase == PHASE_USER    )
     {
         pw = static_cast<CWindow*>(m_interface->SearchControl(EVENT_WINDOW5));
@@ -2177,7 +2195,6 @@ bool CMainDialog::EventProcess(const Event &event)
             m_phase == PHASE_DEFI    ||
             m_phase == PHASE_MISSION ||
             m_phase == PHASE_FREE    ||
-            m_phase == PHASE_TEEN    ||
             m_phase == PHASE_USER    )
     {
         switch( event.type )
@@ -2320,7 +2337,6 @@ bool CMainDialog::EventProcess(const Event &event)
     {
         switch( event.type )
         {
-            case EVENT_LIST1:
             case EVENT_LIST2:
                 UpdateApply();
                 break;
@@ -2352,8 +2368,7 @@ bool CMainDialog::EventProcess(const Event &event)
                 if ( pb == 0 )  break;
                 pb->ClearState(STATE_PRESS);
                 pb->ClearState(STATE_HILIGHT);
-                // TODO: uncomment when changing display is implemented
-                //ChangeDisplay();
+                ChangeDisplay();
                 UpdateApply();
                 break;
 
@@ -2550,6 +2565,13 @@ bool CMainDialog::EventProcess(const Event &event)
             case EVENT_INTERFACE_EFFECT:
                 m_bEffect = !m_bEffect;
                 m_camera->SetEffect(m_bEffect);
+                ChangeSetupButtons();
+                UpdateSetupButtons();
+                break;
+
+            case EVENT_INTERFACE_BLOOD:
+                m_bBlood = !m_bBlood;
+                m_camera->SetBlood(m_bBlood);
                 ChangeSetupButtons();
                 UpdateSetupButtons();
                 break;
@@ -2820,7 +2842,6 @@ void CMainDialog::GlintMove()
             m_phase == PHASE_TRAINER ||
             m_phase == PHASE_MISSION ||
             m_phase == PHASE_FREE    ||
-            m_phase == PHASE_TEEN    ||
             m_phase == PHASE_USER    )
     {
         pg = static_cast<CGroup*>(pw->SearchControl(EVENT_INTERFACE_GLINTl));
@@ -3045,7 +3066,6 @@ void CMainDialog::FrameParticle(float rTime)
             m_phase == PHASE_DEFI    ||
             m_phase == PHASE_MISSION ||
             m_phase == PHASE_FREE    ||
-            m_phase == PHASE_TEEN    ||
             m_phase == PHASE_USER    ||
             m_phase == PHASE_SETUPd  ||
             m_phase == PHASE_SETUPg  ||
@@ -3286,40 +3306,15 @@ void CMainDialog::NiceParticle(Math::Point mouse, bool bPress)
 
 
 
-// Specifies the special user folder if needed.
-
-void CMainDialog::SetUserDir(char *base, int rank)
-{
-    std::string dir;
-
-    if ( strcmp(base, "user") == 0 && rank >= 100 )
-    {
-        dir = m_userDir + "/" + m_userList.at(rank/100-1);
-        GetProfile().SetUserDir(dir);
-    }
-    else
-    {
-        GetProfile().SetUserDir("");
-    }
-}
-
 // Builds the file name of a mission.
 
-void CMainDialog::BuildSceneName(std::string &filename, char *base, int rank)
+void CMainDialog::BuildSceneName(std::string &filename, char *base, int rank, bool sceneFile)
 {
-    std::ostringstream rankStream;
-    if ( strcmp(base, "user") == 0 )
-    {
-        //TODO: Change this to point user dir according to operating system
-        rankStream << std::setfill('0') << std::setw(2) << rank%100;
-        filename = m_userDir + "/" + m_userList[rank/100-1] + "/" + rankStream.str() + ".txt";
-    }
-    else
-    {
-        rankStream << std::setfill('0') << std::setw(3) << rank;
-        filename = base + rankStream.str() + ".txt";
-        filename = CGameData::GetInstancePointer()->GetFilePath(DIR_LEVEL, filename);
-    }
+    //TODO: Support for more than 9 chapters
+    int chapter = rank/100;
+    int new_rank = rank%100;
+    
+    filename = CLevelParser::BuildSceneName(std::string(base), chapter, new_rank, sceneFile);
 }
 
 // Built the default descriptive name of a mission.
@@ -3357,13 +3352,13 @@ void CMainDialog::ReadNameList()
 
     try
     {
-        if (! fs::exists(m_savegameDir) && fs::is_directory(m_savegameDir))
+        if (! fs::exists(GetSavegameDir()) && fs::is_directory(GetSavegameDir()))
         {
             GetLogger()->Error("Savegame dir does not exist %s\n",dir);
         }
         else
         {
-            fs::directory_iterator dirIt(m_savegameDir), dirEndIt;
+            fs::directory_iterator dirIt(GetSavegameDir()), dirEndIt;
 
             for (; dirIt != dirEndIt; ++dirIt)
             {
@@ -3557,7 +3552,7 @@ void CMainDialog::NameSelect()
 
     GetGamerFace(m_main->GetGamerName());
 
-    GetProfile().SetLocalProfileString("Gamer", "LastName", m_main->GetGamerName());
+    GetProfile().SetStringProperty("Gamer", "LastName", m_main->GetGamerName());
 }
 
 // Creates a new player.
@@ -3571,7 +3566,7 @@ void CMainDialog::NameCreate()
     char        c;
     int         len, i, j;
 
-    GetLogger()->Debug("Creating new player\n");
+    GetLogger()->Info("Creating new player\n");
     pw = static_cast<CWindow*>(m_interface->SearchControl(EVENT_WINDOW5));
     if ( pw == 0 )  return;
     pe = static_cast<CEdit*>(pw->SearchControl(EVENT_INTERFACE_NEDIT));
@@ -3608,13 +3603,16 @@ void CMainDialog::NameCreate()
         return;
     }
 
-    // TODO: _mkdir(m_savegameDir);  // if does not exist yet!
 
-
-    dir = m_savegameDir + "/" + name;
+    if(!CResourceManager::DirectoryExists(GetPHYSFSSavegameDir()))
+        CResourceManager::CreateDirectory(GetPHYSFSSavegameDir());
+    
+    dir = GetSavegameDir() + "/" + name;
     if (!fs::exists(dir))
     {
         fs::create_directories(dir);
+        if(!CResourceManager::DirectoryExists(GetPHYSFSSavegameDir()+"/"+name))
+            CResourceManager::CreateDirectory(GetPHYSFSSavegameDir()+"/"+name);
     }
     else
     {
@@ -3681,7 +3679,7 @@ void CMainDialog::NameDelete()
     gamer = pl->GetItemName(sel);
 
     // Deletes all the contents of the file.
-    sprintf(dir, "%s/%s", m_savegameDir.c_str(), gamer);
+    sprintf(dir, "%s/%s", GetSavegameDir().c_str(), gamer);
     if ( !RemoveDir(dir) )
     {
         m_sound->Play(SOUND_TZOING);
@@ -3994,7 +3992,7 @@ bool CMainDialog::IsIOReadScene()
 {
     fs::directory_iterator end_iter;
 
-    fs::path saveDir(m_savegameDir + "/" + m_main->GetGamerName());
+    fs::path saveDir(GetSavegameDir() + "/" + m_main->GetGamerName());
     if (fs::exists(saveDir) && fs::is_directory(saveDir))
     {
         for( fs::directory_iterator dir_iter(saveDir) ; dir_iter != end_iter ; ++dir_iter)
@@ -4013,7 +4011,6 @@ bool CMainDialog::IsIOReadScene()
 
 void CMainDialog::IOReadName()
 {
-    FILE*       file;
     CWindow*    pw;
     CEdit*      pe;
     std::string filename;
@@ -4035,10 +4032,12 @@ void CMainDialog::IOReadName()
     sprintf(op, "Title.E");
     sprintf(op_i18n, "Title.%c", m_app->GetLanguageChar() );
 
-    file = fopen(filename.c_str(), "r");
-    if ( file != NULL )
+    CInputStream stream;
+    stream.open(filename);
+    
+    if (stream.is_open())
     {
-        while ( fgets(line, 500, file) != NULL )
+        while (stream.getline(line, 500))
         {
             for ( i=0 ; i<500 ; i++ )
             {
@@ -4060,7 +4059,7 @@ void CMainDialog::IOReadName()
                 break;
             }
         }
-        fclose(file);
+        stream.close();
     }
 
     time(&now);
@@ -4090,7 +4089,7 @@ void CMainDialog::IOReadList()
 
     pl->Flush();
 
-    fs::path saveDir(m_savegameDir + "/" + m_main->GetGamerName());
+    fs::path saveDir(GetSavegameDir() + "/" + m_main->GetGamerName());
     m_saveList.clear();
 
     if (fs::exists(saveDir) && fs::is_directory(saveDir))
@@ -4167,6 +4166,11 @@ void CMainDialog::IOUpdateList()
         return;
 
     std::string filename = (m_saveList.at(sel) / "screen.png").make_preferred().string();
+    std::string savedir = CResourceManager::GetSaveLocation()+"/";
+    boost::replace_all(filename, "\\", "/");
+    boost::replace_all(savedir, "\\", "/");
+    boost::replace_all(filename, savedir, ""); //TODO: Refactor everything to PHYSFS, see issue #334
+    filename = "../"+filename;
     if ( m_phase == PHASE_WRITE  || m_phase == PHASE_WRITEs )
     {
         if ( sel < max-1 )
@@ -4267,7 +4271,7 @@ bool CMainDialog::IOWriteScene()
     pe->GetText(info, 100);
     if (static_cast<unsigned int>(sel) >= m_saveList.size())
     {
-        dir = fs::path(m_savegameDir) / m_main->GetGamerName() / ("save" + clearName(info));
+        dir = fs::path(GetSavegameDir()) / m_main->GetGamerName() / ("save" + clearName(info));
     }
     else
     {
@@ -4394,7 +4398,6 @@ void CMainDialog::AllMissionUpdate()
          m_phase == PHASE_DEFI    ||
          m_phase == PHASE_MISSION ||
          m_phase == PHASE_FREE    ||
-         m_phase == PHASE_TEEN    ||
          m_phase == PHASE_USER    )
     {
         UpdateSceneChap(m_chap[m_index]);
@@ -4406,22 +4409,15 @@ void CMainDialog::AllMissionUpdate()
 
 void CMainDialog::UpdateSceneChap(int &chap)
 {
-    FILE*       file = NULL;
     CWindow*    pw;
     CList*      pl;
-    //struct _finddata_t fileBuffer;
+
     std::string fileName;
-    char        op[100];
-    char        op_i18n[100];
     char        line[500];
-    char        name[100];
-    int         i, j;
+    int         j;
     bool        bPassed;
 
-    memset(op, 0, 100);
-    memset(op_i18n, 0, 100);
     memset(line, 0, 500);
-    memset(name, 0, 100);
 
     pw = static_cast<CWindow*>(m_interface->SearchControl(EVENT_WINDOW5));
     if ( pw == 0 )  return;
@@ -4433,100 +4429,44 @@ void CMainDialog::UpdateSceneChap(int &chap)
     if ( m_phase == PHASE_USER )
     {
         j = 0;
-        fs::directory_iterator dirIt(m_savegameDir), dirEndIt;
-        m_userList.clear();
-
-        for (; dirIt != dirEndIt; ++dirIt)
-        {
-            const fs::path& p = *dirIt;
-            if (fs::is_directory(p))
-            {
-                m_userList.push_back(p.leaf().string());
-            }
-        }
+        auto userLevelDirs = CResourceManager::ListDirectories("levels/custom/");
+        std::sort(userLevelDirs.begin(), userLevelDirs.end());
+        m_userList = userLevelDirs;
         m_userTotal = m_userList.size();
 
         for ( j=0 ; j<m_userTotal ; j++ )
         {
-            BuildSceneName(fileName, m_sceneName, (j+1)*100);
-            file = fopen(fileName.c_str(), "r");
-            if ( file == NULL )
-            {
-                strcpy(name, m_userList[j].c_str());
+            try {
+                CLevelParser* level = new CLevelParser("custom", j+1, 0);
+                level->Load();
+                pl->SetItemName(j, level->Get("Title")->GetParam("text")->AsString().c_str());
+                pl->SetEnable(j, true);
+                delete level;
             }
-            else
+            catch(CLevelParserException& e)
             {
-                BuildResumeName(name, m_sceneName, j+1);  // default name
-                sprintf(op, "Title.E");
-                sprintf(op_i18n, "Title.%c", m_app->GetLanguageChar());
-
-                while ( fgets(line, 500, file) != NULL )
-                {
-                    for ( i=0 ; i<500 ; i++ )
-                    {
-                        if ( line[i] == '\t' )  line[i] = ' ';  // replaces tab by space
-                        if ( line[i] == '/' && line[i+1] == '/' )
-                        {
-                            line[i] = 0;
-                            break;
-                        }
-                    }
-
-                    if ( Cmd(line, op) )
-                    {
-                        OpString(line, "text", name);
-                    }
-                    if ( Cmd(line, op_i18n) )
-                    {
-                        OpString(line, "text", name);
-                        break;
-                    }
-                }
-                fclose(file);
+                pl->SetItemName(j, (std::string("[ERROR]: ")+e.what()).c_str());
+                pl->SetEnable(j, false);
             }
-
-            pl->SetItemName(j, name);
-            pl->SetEnable(j, true);
         }
     }
     else
     {
         for ( j=0 ; j<9 ; j++ )
         {
-            BuildSceneName(fileName, m_sceneName, (j+1)*100);
-            file = fopen(fileName.c_str(), "r");
-            if ( file == NULL )  break;
-
-            BuildResumeName(name, m_sceneName, j+1);  // default name
-            sprintf(op, "Title.E");
-            sprintf(op_i18n, "Title.%c", m_app->GetLanguageChar());
-
-            while ( fgets(line, 500, file) != NULL )
-            {
-                for ( i=0 ; i<500 ; i++ )
-                {
-                    if ( line[i] == '\t' )  line[i] = ' ';  // replaces tab by space
-                    if ( line[i] == '/' && line[i+1] == '/' )
-                    {
-                        line[i] = 0;
-                        break;
-                    }
-                }
-
-                if ( Cmd(line, op) )
-                {
-                    OpString(line, "text", name);
-                }
-                if ( Cmd(line, op_i18n) )
-                {
-                    OpString(line, "text", name);
-                    break;
-                }
+            CLevelParser* level = new CLevelParser(m_sceneName, j+1, 0);
+            if(!level->Exists())
+                break;
+            try {
+                level->Load();
+                sprintf(line, "%d: %s", j+1, level->Get("Title")->GetParam("text")->AsString().c_str());
             }
-            fclose(file);
+            catch(CLevelParserException& e) {
+                sprintf(line, "%s", (std::string("[ERROR]: ")+e.what()).c_str());
+            }
+            delete level;
 
             bPassed = GetGamerInfoPassed((j+1)*100);
-            sprintf(line, "%d: %s", j+1, name);
             pl->SetItemName(j, line);
             pl->SetCheck(j, bPassed);
             pl->SetEnable(j, true);
@@ -4555,21 +4495,14 @@ void CMainDialog::UpdateSceneChap(int &chap)
 
 void CMainDialog::UpdateSceneList(int chap, int &sel)
 {
-    FILE*       file = NULL;
     CWindow*    pw;
     CList*      pl;
     std::string fileName;
-    char        op[100];
-    char        op_i18n[100];
     char        line[500];
-    char        name[100];
-    int         i, j;
+    int         j;
     bool        bPassed;
 
-    memset(op, 0, 100);
-    memset(op_i18n, 0, 100);
     memset(line, 0, 500);
-    memset(name, 0, 100);
 
     pw = static_cast<CWindow*>(m_interface->SearchControl(EVENT_WINDOW5));
     if ( pw == 0 )  return;
@@ -4577,64 +4510,47 @@ void CMainDialog::UpdateSceneList(int chap, int &sel)
     if ( pl == 0 )  return;
 
     pl->Flush();
+    
+    if(chap < 0) return;
 
+    bool readAll = true;
     for ( j=0 ; j<99 ; j++ )
     {
-        BuildSceneName(fileName, m_sceneName, (chap+1)*100+(j+1));
-        file = fopen(fileName.c_str(), "r");
-        if ( file == NULL )  break;
-
-        BuildResumeName(name, m_sceneName, j+1);  // default name
-        sprintf(op, "Title.E");
-        sprintf(op_i18n, "Title.%c", m_app->GetLanguageChar());
-
-        while ( fgets(line, 500, file) != NULL )
-        {
-            for ( i=0 ; i<500 ; i++ )
-            {
-                if ( line[i] == '\t' )  line[i] = ' ';  // replaces tab by space
-                if ( line[i] == '/' && line[i+1] == '/' )
-                {
-                    line[i] = 0;
-                    break;
-                }
-            }
-
-            if ( Cmd(line, op) )
-            {
-                OpString(line, "text", name);
-            }
-            if ( Cmd(line, op_i18n) )
-            {
-                OpString(line, "text", name);
+        CLevelParser* level = new CLevelParser(m_sceneName, chap+1, j+1);
+        if(!level->Exists()) {
+            readAll = true;
+            break;
+        } else {
+            if(!readAll)
                 break;
-            }
         }
-        fclose(file);
+        try {
+            level->Load();
+            sprintf(line, "%d: %s", j+1, level->Get("Title")->GetParam("text")->AsString().c_str());
+        }
+        catch(CLevelParserException& e) {
+            sprintf(line, "%s", (std::string("[ERROR]: ")+e.what()).c_str());
+        }
+        delete level;
 
         bPassed = GetGamerInfoPassed((chap+1)*100+(j+1));
-        sprintf(line, "%d: %s", j+1, name);
         pl->SetItemName(j, line);
         pl->SetCheck(j, bPassed);
         pl->SetEnable(j, true);
 
         if ( m_phase == PHASE_MISSION && !m_main->GetShowAll() && !bPassed )
         {
-            j ++;
-            break;
+            readAll = false;
         }
     }
 
-    BuildSceneName(fileName, m_sceneName, (chap+1)*100+(j+1));
-    file = fopen(fileName.c_str(), "r");
-    if ( file == NULL )
+    if(readAll)
     {
         m_maxList = j;
     }
     else
     {
         m_maxList = j+1;  // this is not the last!
-        fclose(file);
     }
 
     if ( sel > j-1 )  sel = j-1;
@@ -4655,7 +4571,6 @@ void CMainDialog::ShowSoluceUpdate()
          m_phase == PHASE_DEFI    ||
          m_phase == PHASE_MISSION ||
          m_phase == PHASE_FREE    ||
-         m_phase == PHASE_TEEN    ||
          m_phase == PHASE_USER    )
     {
         m_bSceneSoluce = false;
@@ -4686,16 +4601,11 @@ void CMainDialog::ShowSoluceUpdate()
 
 void CMainDialog::UpdateSceneResume(int rank)
 {
-    FILE*       file = NULL;
     CWindow*    pw;
     CEdit*      pe;
     CCheck*     pc;
     std::string fileName;
-    char        op[100];
-    char        op_i18n[100];
-    char        line[500];
-    char        name[500];
-    int         i, numTry;
+    int         numTry;
     bool        bPassed, bVisible;
 
     pw = static_cast<CWindow*>(m_interface->SearchControl(EVENT_WINDOW5));
@@ -4721,80 +4631,18 @@ void CMainDialog::UpdateSceneResume(int rank)
             m_bSceneSoluce = false;
         }
     }
-
-    BuildSceneName(fileName, m_sceneName, rank);
-    sprintf(op, "Resume.E");
-    sprintf(op_i18n, "Resume.%c", m_app->GetLanguageChar());
-
-    file = fopen(fileName.c_str(), "r");
-    if ( file == NULL )  return;
-
-    name[0] = 0;
-    while ( fgets(line, 500, file) != NULL )
-    {
-        for ( i=0 ; i<500 ; i++ )
-        {
-            if (line[i] == 0)
-                break;
-
-            if ( line[i] == '\t' )  line[i] = ' ';  // replaces tab by space
-            if ( line[i] == '/' && line[i+1] == '/' )
-            {
-                line[i] = 0;
-                break;
-            }
-        }
-
-        if ( Cmd(line, op) )
-        {
-            OpString(line, "text", name);
-        }
-        if ( Cmd(line, op_i18n) )
-        {
-            OpString(line, "text", name);
-            break;
-        }
+    
+    if(rank<100) return;
+    
+    try {
+        CLevelParser* level = new CLevelParser(m_sceneName, rank/100, rank%100);
+        level->Load();
+        pe->SetText(level->Get("Resume")->GetParam("text")->AsString().c_str());
     }
-    fclose(file);
-
-    pe->SetText(name);
-}
-
-// Updates the list of devices.
-
-void CMainDialog::UpdateDisplayDevice()
-{
-    CWindow*    pw;
-    CList*      pl;
-    char        bufDevices[1000];
-    //char        bufModes[5000];
-    int         i, j;
-
-    pw = static_cast<CWindow*>(m_interface->SearchControl(EVENT_WINDOW5));
-    if ( pw == 0 )  return;
-    pl = static_cast<CList*>(pw->SearchControl(EVENT_LIST1));
-    if ( pl == 0 )  return;
-    pl->Flush();
-
-    //bufModes[0] = 0;
-    /* TODO: remove device choice
-    m_engine->EnumDevices(bufDevices, 1000,
-                          bufModes,   5000,
-                          totalDevices, selectDevices,
-                          totalModes,   selectModes);*/
-
-    i = 0;
-    j = 0;
-    while ( bufDevices[i] != 0 )
+    catch(CLevelParserException& e)
     {
-        pl->SetItemName(j++, bufDevices+i);
-        while ( bufDevices[i++] != 0 );
+        pe->SetText((std::string("[ERROR]: ")+e.what()).c_str());
     }
-
-    pl->SetSelect(0);
-    pl->ShowSelect(false);
-
-    m_setupSelDevice = 0;
 }
 
 // Updates the list of modes.
@@ -4832,36 +4680,35 @@ void CMainDialog::ChangeDisplay()
     CWindow*    pw;
     CList*      pl;
     CCheck*     pc;
-    //char*       device;
-    //char*       mode;
     bool        bFull;
 
     pw = static_cast<CWindow*>(m_interface->SearchControl(EVENT_WINDOW5));
     if ( pw == 0 )  return;
 
-    pl = static_cast<CList*>(pw->SearchControl(EVENT_LIST1));
-    if ( pl == 0 )  return;
-    m_setupSelDevice = pl->GetSelect();
-    //device = pl->GetItemName(m_setupSelDevice);
-
     pl = static_cast<CList*>(pw->SearchControl(EVENT_LIST2));
     if ( pl == 0 )  return;
     m_setupSelMode = pl->GetSelect();
-    //mode = pl->GetItemName(m_setupSelMode);
 
     pc = static_cast<CCheck*>(pw->SearchControl(EVENT_INTERFACE_FULL));
     if ( pc == 0 )  return;
     bFull = pc->TestState(STATE_CHECK);
     m_setupFull = bFull;
-
-    // TODO: remove device choice
-    // m_engine->ChangeDevice(device, mode, bFull);
-
-    if ( m_bSimulSetup )
-    {
-        m_main->ChangeColor();
-        m_main->UpdateMap();
-    }
+    
+    SetupMemorize();
+    
+    #if !PLATFORM_LINUX
+    // Windows causes problems, so we'll restart the game
+    // Mac OS was not tested so let's restart just to be sure
+    m_app->Restart();
+    #else
+    std::vector<Math::IntPoint> modes;
+    m_app->GetVideoResolutionList(modes, true, true);
+    
+    Gfx::GLDeviceConfig config = m_app->GetVideoConfig();
+    config.size = modes[m_setupSelMode];
+    config.fullScreen = bFull;
+    m_app->ChangeVideoConfig(config);
+    #endif
 }
 
 
@@ -4874,18 +4721,13 @@ void CMainDialog::UpdateApply()
     CButton*    pb;
     CList*      pl;
     CCheck*     pc;
-    int         sel1, sel2;
+    int         sel2;
     bool        bFull;
 
     pw = static_cast<CWindow*>(m_interface->SearchControl(EVENT_WINDOW5));
     if ( pw == 0 )  return;
 
     pb = static_cast<CButton*>(pw->SearchControl(EVENT_INTERFACE_APPLY));
-    if ( pb == 0 )  return;
-
-    pl = static_cast<CList*>(pw->SearchControl(EVENT_LIST1));
-    if ( pl == 0 )  return;
-    sel1 = pl->GetSelect();
 
     pl = static_cast<CList*>(pw->SearchControl(EVENT_LIST2));
     if ( pl == 0 )  return;
@@ -4894,8 +4736,7 @@ void CMainDialog::UpdateApply()
     pc = static_cast<CCheck*>(pw->SearchControl(EVENT_INTERFACE_FULL));
     bFull = pc->TestState(STATE_CHECK);
 
-    if ( sel1 == m_setupSelDevice &&
-         sel2 == m_setupSelMode   &&
+    if ( sel2 == m_setupSelMode   &&
          bFull == m_setupFull     )
     {
         pb->ClearState(STATE_ENABLE);
@@ -5009,6 +4850,12 @@ void CMainDialog::UpdateSetupButtons()
     if ( pc != 0 )
     {
         pc->SetState(STATE_CHECK, m_bEffect);
+    }
+
+    pc = static_cast<CCheck*>(pw->SearchControl(EVENT_INTERFACE_BLOOD));
+    if ( pc != 0 )
+    {
+        pc->SetState(STATE_CHECK, m_bBlood);
     }
 
     pc = static_cast<CCheck*>(pw->SearchControl(EVENT_INTERFACE_SHADOW));
@@ -5182,46 +5029,45 @@ void CMainDialog::ChangeSetupButtons()
 
 void CMainDialog::SetupMemorize()
 {
-    GetProfile().SetLocalProfileString("Directory", "scene",    m_sceneDir);
-    GetProfile().SetLocalProfileString("Directory", "savegame", m_savegameDir);
-    GetProfile().SetLocalProfileString("Directory", "public",   m_publicDir);
-    GetProfile().SetLocalProfileString("Directory", "user",     m_userDir);
-    GetProfile().SetLocalProfileString("Directory", "files",    m_filesDir);
-    GetProfile().SetLocalProfileInt("Setup", "Tooltips", m_bTooltip);
-    GetProfile().SetLocalProfileInt("Setup", "InterfaceGlint", m_bGlint);
-    GetProfile().SetLocalProfileInt("Setup", "InterfaceGlint", m_bRain);
-    GetProfile().SetLocalProfileInt("Setup", "Soluce4", m_bSoluce4);
-    GetProfile().SetLocalProfileInt("Setup", "Movies", m_bMovies);
-    GetProfile().SetLocalProfileInt("Setup", "NiceReset", m_bNiceReset);
-    GetProfile().SetLocalProfileInt("Setup", "HimselfDamage", m_bHimselfDamage);
-    GetProfile().SetLocalProfileInt("Setup", "CameraScroll", m_bCameraScroll);
-    GetProfile().SetLocalProfileInt("Setup", "CameraInvertX", m_bCameraInvertX);
-    GetProfile().SetLocalProfileInt("Setup", "CameraInvertY", m_bCameraInvertY);
-    GetProfile().SetLocalProfileInt("Setup", "InterfaceEffect", m_bEffect);
-    GetProfile().SetLocalProfileInt("Setup", "GroundShadow", m_engine->GetShadow());
-    GetProfile().SetLocalProfileInt("Setup", "GroundSpot", m_engine->GetGroundSpot());
-    GetProfile().SetLocalProfileInt("Setup", "ObjectDirty", m_engine->GetDirty());
-    GetProfile().SetLocalProfileInt("Setup", "FogMode", m_engine->GetFog());
-    GetProfile().SetLocalProfileInt("Setup", "LensMode", m_engine->GetLensMode());
-    GetProfile().SetLocalProfileInt("Setup", "SkyMode", m_engine->GetSkyMode());
-    GetProfile().SetLocalProfileInt("Setup", "PlanetMode", m_engine->GetPlanetMode());
-    GetProfile().SetLocalProfileInt("Setup", "LightMode", m_engine->GetLightMode());
-    GetProfile().SetLocalProfileFloat("Setup", "ParticleDensity", m_engine->GetParticleDensity());
-    GetProfile().SetLocalProfileFloat("Setup", "ClippingDistance", m_engine->GetClippingDistance());
-    GetProfile().SetLocalProfileFloat("Setup", "ObjectDetail", m_engine->GetObjectDetail());
-    GetProfile().SetLocalProfileFloat("Setup", "GadgetQuantity", m_engine->GetGadgetQuantity());
-    GetProfile().SetLocalProfileInt("Setup", "TextureQuality", m_engine->GetTextureQuality());
-    GetProfile().SetLocalProfileInt("Setup", "TotoMode", m_engine->GetTotoMode());
-    GetProfile().SetLocalProfileInt("Setup", "AudioVolume", m_sound->GetAudioVolume());
-    GetProfile().SetLocalProfileInt("Setup", "MusicVolume", m_sound->GetMusicVolume());
-    GetProfile().SetLocalProfileInt("Setup", "EditIndentMode", m_engine->GetEditIndentMode());
-    GetProfile().SetLocalProfileInt("Setup", "EditIndentValue", m_engine->GetEditIndentValue());
+    GetProfile().SetStringProperty("Directory", "savegame", m_savegameDir);
+    GetProfile().SetStringProperty("Directory", "public",   m_publicDir);
+    GetProfile().SetStringProperty("Directory", "files",    m_filesDir);
+    GetProfile().SetIntProperty("Setup", "Tooltips", m_bTooltip);
+    GetProfile().SetIntProperty("Setup", "InterfaceGlint", m_bGlint);
+    GetProfile().SetIntProperty("Setup", "InterfaceGlint", m_bRain);
+    GetProfile().SetIntProperty("Setup", "Soluce4", m_bSoluce4);
+    GetProfile().SetIntProperty("Setup", "Movies", m_bMovies);
+    GetProfile().SetIntProperty("Setup", "NiceReset", m_bNiceReset);
+    GetProfile().SetIntProperty("Setup", "HimselfDamage", m_bHimselfDamage);
+    GetProfile().SetIntProperty("Setup", "CameraScroll", m_bCameraScroll);
+    GetProfile().SetIntProperty("Setup", "CameraInvertX", m_bCameraInvertX);
+    GetProfile().SetIntProperty("Setup", "CameraInvertY", m_bCameraInvertY);
+    GetProfile().SetIntProperty("Setup", "InterfaceEffect", m_bEffect);
+    GetProfile().SetIntProperty("Setup", "Blood", m_bBlood);
+    GetProfile().SetIntProperty("Setup", "GroundShadow", m_engine->GetShadow());
+    GetProfile().SetIntProperty("Setup", "GroundSpot", m_engine->GetGroundSpot());
+    GetProfile().SetIntProperty("Setup", "ObjectDirty", m_engine->GetDirty());
+    GetProfile().SetIntProperty("Setup", "FogMode", m_engine->GetFog());
+    GetProfile().SetIntProperty("Setup", "LensMode", m_engine->GetLensMode());
+    GetProfile().SetIntProperty("Setup", "SkyMode", m_engine->GetSkyMode());
+    GetProfile().SetIntProperty("Setup", "PlanetMode", m_engine->GetPlanetMode());
+    GetProfile().SetIntProperty("Setup", "LightMode", m_engine->GetLightMode());
+    GetProfile().SetFloatProperty("Setup", "ParticleDensity", m_engine->GetParticleDensity());
+    GetProfile().SetFloatProperty("Setup", "ClippingDistance", m_engine->GetClippingDistance());
+    GetProfile().SetFloatProperty("Setup", "ObjectDetail", m_engine->GetObjectDetail());
+    GetProfile().SetFloatProperty("Setup", "GadgetQuantity", m_engine->GetGadgetQuantity());
+    GetProfile().SetIntProperty("Setup", "TextureQuality", m_engine->GetTextureQuality());
+    GetProfile().SetIntProperty("Setup", "TotoMode", m_engine->GetTotoMode());
+    GetProfile().SetIntProperty("Setup", "AudioVolume", m_sound->GetAudioVolume());
+    GetProfile().SetIntProperty("Setup", "MusicVolume", m_sound->GetMusicVolume());
+    GetProfile().SetIntProperty("Setup", "EditIndentMode", m_engine->GetEditIndentMode());
+    GetProfile().SetIntProperty("Setup", "EditIndentValue", m_engine->GetEditIndentValue());
 
     /* screen setup */
     if (m_setupFull)
-        GetProfile().SetLocalProfileInt("Setup", "Fullscreen", 1);
+        GetProfile().SetIntProperty("Setup", "Fullscreen", 1);
     else
-        GetProfile().SetLocalProfileInt("Setup", "Fullscreen", 0);
+        GetProfile().SetIntProperty("Setup", "Fullscreen", 0);
 
     CList *pl;
     CWindow *pw;
@@ -5231,7 +5077,7 @@ void CMainDialog::SetupMemorize()
         pl = static_cast<CList *>(pw->SearchControl(EVENT_LIST2));
         if ( pl != 0 )
         {
-            GetProfile().SetLocalProfileInt("Setup", "Resolution", pl->GetSelect());
+            GetProfile().SetIntProperty("Setup", "Resolution", pl->GetSelect());
         }
     }
     else
@@ -5248,9 +5094,9 @@ void CMainDialog::SetupMemorize()
         key << b.secondary << "  ";
     }
 
-    GetProfile().SetLocalProfileString("Setup", "KeyMap", key.str());
+    GetProfile().SetStringProperty("Setup", "KeyMap", key.str());
 
-    GetProfile().SetLocalProfileInt("Setup", "DeleteGamer", m_bDeleteGamer);
+    GetProfile().SetIntProperty("Setup", "DeleteGamer", m_bDeleteGamer);
 }
 
 // Remember all the settings.
@@ -5261,48 +5107,38 @@ void CMainDialog::SetupRecall()
     int         iValue;
     std::string key;
 
-    if ( GetProfile().GetLocalProfileString("Directory", "scene", key) )
-    {
-        m_sceneDir = key;
-    }
-
-    if ( GetProfile().GetLocalProfileString("Directory", "savegame", key) )
+    if ( GetProfile().GetStringProperty("Directory", "savegame", key) )
     {
         m_savegameDir = key;
     }
 
-    if ( GetProfile().GetLocalProfileString("Directory", "public", key) )
+    if ( GetProfile().GetStringProperty("Directory", "public", key) )
     {
         m_publicDir = key;
     }
 
-    if ( GetProfile().GetLocalProfileString("Directory", "user", key) )
-    {
-        m_userDir = key;
-    }
-
-    if ( GetProfile().GetLocalProfileString("Directory", "files", key) )
+    if ( GetProfile().GetStringProperty("Directory", "files", key) )
     {
         m_filesDir = key;
     }
 
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "TotoMode", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "TotoMode", iValue) )
     {
         m_engine->SetTotoMode(iValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "Tooltips", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "Tooltips", iValue) )
     {
         m_bTooltip = iValue;
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "InterfaceGlint", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "InterfaceGlint", iValue) )
     {
         m_bGlint = iValue;
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "InterfaceGlint", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "InterfaceGlint", iValue) )
     {
         m_bRain = iValue;
     }
@@ -5313,86 +5149,91 @@ void CMainDialog::SetupRecall()
     //     m_engine->SetNiceMouse(iValue);
     // }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "Soluce4", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "Soluce4", iValue) )
     {
         m_bSoluce4 = iValue;
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "Movies", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "Movies", iValue) )
     {
         m_bMovies = iValue;
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "NiceReset", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "NiceReset", iValue) )
     {
         m_bNiceReset = iValue;
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "HimselfDamage", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "HimselfDamage", iValue) )
     {
         m_bHimselfDamage = iValue;
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "CameraScroll", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "CameraScroll", iValue) )
     {
         m_bCameraScroll = iValue;
         m_camera->SetCameraScroll(m_bCameraScroll);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "CameraInvertX", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "CameraInvertX", iValue) )
     {
         m_bCameraInvertX = iValue;
         m_camera->SetCameraInvertX(m_bCameraInvertX);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "CameraInvertY", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "CameraInvertY", iValue) )
     {
         m_bCameraInvertY = iValue;
         m_camera->SetCameraInvertY(m_bCameraInvertY);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "InterfaceEffect", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "InterfaceEffect", iValue) )
     {
         m_bEffect = iValue;
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "GroundShadow", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "Blood", iValue) )
+    {
+        m_bBlood = iValue;
+    }
+    
+    if ( GetProfile().GetIntProperty("Setup", "GroundShadow", iValue) )
     {
         m_engine->SetShadow(iValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "GroundSpot", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "GroundSpot", iValue) )
     {
         m_engine->SetGroundSpot(iValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "ObjectDirty", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "ObjectDirty", iValue) )
     {
         m_engine->SetDirty(iValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "FogMode", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "FogMode", iValue) )
     {
         m_engine->SetFog(iValue);
         m_camera->SetOverBaseColor(Gfx::Color(0.0f, 0.0f, 0.0f, 0.0f)); // TODO: color ok?
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "LensMode", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "LensMode", iValue) )
     {
         m_engine->SetLensMode(iValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "SkyMode", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "SkyMode", iValue) )
     {
         m_engine->SetSkyMode(iValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "PlanetMode", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "PlanetMode", iValue) )
     {
         m_engine->SetPlanetMode(iValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "LightMode", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "LightMode", iValue) )
     {
         m_engine->SetLightMode(iValue);
     }
@@ -5402,52 +5243,52 @@ void CMainDialog::SetupRecall()
     //     m_engine->SetJoystick(iValue);
     // }
 
-    if ( GetProfile().GetLocalProfileFloat("Setup", "ParticleDensity", fValue) )
+    if ( GetProfile().GetFloatProperty("Setup", "ParticleDensity", fValue) )
     {
         m_engine->SetParticleDensity(fValue);
     }
 
-    if ( GetProfile().GetLocalProfileFloat("Setup", "ClippingDistance", fValue) )
+    if ( GetProfile().GetFloatProperty("Setup", "ClippingDistance", fValue) )
     {
         m_engine->SetClippingDistance(fValue);
     }
 
-    if ( GetProfile().GetLocalProfileFloat("Setup", "ObjectDetail", fValue) )
+    if ( GetProfile().GetFloatProperty("Setup", "ObjectDetail", fValue) )
     {
         m_engine->SetObjectDetail(fValue);
     }
 
-    if ( GetProfile().GetLocalProfileFloat("Setup", "GadgetQuantity", fValue) )
+    if ( GetProfile().GetFloatProperty("Setup", "GadgetQuantity", fValue) )
     {
         m_engine->SetGadgetQuantity(fValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "TextureQuality", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "TextureQuality", iValue) )
     {
         m_engine->SetTextureQuality(iValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "AudioVolume", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "AudioVolume", iValue) )
     {
         m_sound->SetAudioVolume(iValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "MusicVolume", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "MusicVolume", iValue) )
     {
         m_sound->SetMusicVolume(iValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "EditIndentMode", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "EditIndentMode", iValue) )
     {
         m_engine->SetEditIndentMode(iValue);
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "EditIndentValue", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "EditIndentValue", iValue) )
     {
         m_engine->SetEditIndentValue(iValue);
     }
 
-    if (GetProfile().GetLocalProfileString("Setup", "KeyMap", key))
+    if (GetProfile().GetStringProperty("Setup", "KeyMap", key))
     {
         std::stringstream skey;
         skey.str(key);
@@ -5460,17 +5301,17 @@ void CMainDialog::SetupRecall()
          }
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "DeleteGamer", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "DeleteGamer", iValue) )
     {
         m_bDeleteGamer = iValue;
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "Resolution", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "Resolution", iValue) )
     {
         m_setupSelMode = iValue;
     }
 
-    if ( GetProfile().GetLocalProfileInt("Setup", "Fullscreen", iValue) )
+    if ( GetProfile().GetIntProperty("Setup", "Fullscreen", iValue) )
     {
         m_setupFull = (iValue == 1);
     }
@@ -5852,12 +5693,6 @@ void CMainDialog::StartDialog(Math::Point dim, bool bFire, bool bOK, bool bCance
     pw = static_cast<CWindow*>(m_interface->SearchControl(EVENT_WINDOW8));
     if ( pw != 0 )  pw->ClearState(STATE_ENABLE);
 
-    pb = static_cast<CButton*>(m_interface->SearchControl(EVENT_BUTTON_QUIT));
-    if ( pb != 0 )
-    {
-        pb->ClearState(STATE_VISIBLE);
-    }
-
     m_bDialogFire = bFire;
 
     std::string name;
@@ -6011,7 +5846,6 @@ void CMainDialog::FrameDialog(float rTime)
 void CMainDialog::StopDialog()
 {
     CWindow*    pw;
-    CButton*    pb;
 
     pw = static_cast<CWindow*>(m_interface->SearchControl(EVENT_WINDOW0));
     if ( pw != 0 )  pw->SetState(STATE_ENABLE);
@@ -6039,12 +5873,6 @@ void CMainDialog::StopDialog()
 
     pw = static_cast<CWindow*>(m_interface->SearchControl(EVENT_WINDOW8));
     if ( pw != 0 )  pw->SetState(STATE_ENABLE);
-
-    pb = static_cast<CButton*>(m_interface->SearchControl(EVENT_BUTTON_QUIT));
-    if ( pb != 0 )
-    {
-        pb->SetState(STATE_VISIBLE);
-    }
 
     StopSuspend();
     m_interface->DeleteControl(EVENT_WINDOW9);
@@ -6174,7 +6002,13 @@ bool CMainDialog::GetSceneSoluce()
 
 // Returns the name of the folder to save.
 
-std::string & CMainDialog::GetSavegameDir()
+std::string CMainDialog::GetSavegameDir()
+{
+    return CResourceManager::GetSaveLocation()+"/"+m_savegameDir;
+}
+
+//TODO: Use PHYSFS everywhere
+std::string & CMainDialog::GetPHYSFSSavegameDir()
 {
     return m_savegameDir;
 }
@@ -6232,7 +6066,7 @@ void CMainDialog::WriteGamerPerso(char *gamer)
     char    filename[100];
     char    line[100];
 
-    sprintf(filename, "%s/%s/face.gam", m_savegameDir.c_str(), gamer);
+    sprintf(filename, "%s/%s/face.gam", GetSavegameDir().c_str(), gamer);
     file = fopen(filename, "w");
     if ( file == NULL )  return;
 
@@ -6265,7 +6099,7 @@ void CMainDialog::ReadGamerPerso(char *gamer)
     m_perso.face = 0;
     DefPerso();
 
-    sprintf(filename, "%s/%s/face.gam", m_savegameDir.c_str(), gamer);
+    sprintf(filename, "%s/%s/face.gam", GetSavegameDir().c_str(), gamer);
     file = fopen(filename, "r");
     if ( file == NULL )  return;
 
@@ -6374,7 +6208,7 @@ bool CMainDialog::ReadGamerInfo()
         m_sceneInfo[i].bPassed = false;
     }
 
-    sprintf(line, "%s/%s/%s.gam", m_savegameDir.c_str(), m_main->GetGamerName(), m_sceneName);
+    sprintf(line, "%s/%s/%s.gam", GetSavegameDir().c_str(), m_main->GetGamerName(), m_sceneName);
     file = fopen(line, "r");
     if ( file == NULL )  return false;
 
@@ -6410,7 +6244,7 @@ bool CMainDialog::WriteGamerInfo()
     char    line[100];
     int     i;
 
-    sprintf(line, "%s/%s/%s.gam", m_savegameDir.c_str(), m_main->GetGamerName(), m_sceneName);
+    sprintf(line, "%s/%s/%s.gam", GetSavegameDir().c_str(), m_main->GetGamerName(), m_sceneName);
     file = fopen(line, "w");
     if ( file == NULL )  return false;
 
@@ -6420,7 +6254,7 @@ bool CMainDialog::WriteGamerInfo()
 
     for ( i=0 ; i<MAXSCENE ; i++ )
     {
-        if ( m_sceneInfo[i].numTry == 0 )  continue;
+        if ( m_sceneInfo[i].numTry == 0 && !m_sceneInfo[i].bPassed )  continue;
 
         sprintf(line, "Chapter %d: Scene %d: numTry=%d passed=%d\n",
                 i/100, i%100, m_sceneInfo[i].numTry, m_sceneInfo[i].bPassed);
@@ -6485,6 +6319,11 @@ bool CMainDialog::NextMission()
     }
 
     return true;
+}
+
+std::string& CMainDialog::GetUserLevelName(int id)
+{
+    return m_userList[id-1];
 }
 
 

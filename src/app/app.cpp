@@ -1,25 +1,26 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 #include "common/config.h"
 
 #include "app/app.h"
 
-#include "app/gamedata.h"
 #include "app/system.h"
 
 #include "common/logger.h"
@@ -27,8 +28,10 @@
 #include "common/image.h"
 #include "common/key.h"
 #include "common/stringutils.h"
+#include "common/resources/resourcemanager.h"
 
 #include "graphics/engine/modelmanager.h"
+#include "graphics/core/nulldevice.h"
 #include "graphics/opengl/gldevice.h"
 
 #include "object/robotmain.h"
@@ -101,7 +104,6 @@ CApplication::CApplication()
     m_objMan        = new CObjectManager();
     m_eventQueue    = new CEventQueue();
     m_profile       = new CProfile();
-    m_gameData      = new CGameData();
 
     m_engine    = nullptr;
     m_device    = nullptr;
@@ -112,9 +114,9 @@ CApplication::CApplication()
     m_exitCode  = 0;
     m_active    = false;
     m_debugModes = 0;
-    m_customDataPath = false;
+    m_restart   = false;
 
-    m_windowTitle = "COLOBOT GOLD";
+    m_windowTitle = "Colobot: Gold Edition";
 
     m_simulationSuspended = false;
 
@@ -149,19 +151,30 @@ CApplication::CApplication()
     m_mouseButtonsState = 0;
     m_trackedKeys = 0;
 
+    #ifdef PORTABLE
+    m_dataPath = "./data";
+    m_langPath = "./lang";
+    #else
     m_dataPath = GetSystemUtils()->GetDataPath();
     m_langPath = GetSystemUtils()->GetLangPath();
+	#endif
+	
+	#ifdef DEV_BUILD
+    m_savePath = "./saves";
+    #else
+    m_savePath = GetSystemUtils()->GetSaveDir();
+    #endif
 
     m_runSceneName = "";
     m_runSceneRank = 0;
-    
+
     m_sceneTest = false;
+    m_headless = false;
+    m_resolutionOverride = false;
 
     m_language = LANGUAGE_ENV;
 
     m_lowCPU = true;
-
-    m_protoMode = false;
 }
 
 CApplication::~CApplication()
@@ -180,9 +193,6 @@ CApplication::~CApplication()
 
     delete m_iMan;
     m_iMan = nullptr;
-    
-    delete m_gameData;
-    m_gameData = nullptr;
 
     GetSystemUtils()->DestroyTimeStamp(m_baseTimeStamp);
     GetSystemUtils()->DestroyTimeStamp(m_curTimeStamp);
@@ -215,10 +225,13 @@ ParseArgsStatus CApplication::ParseArguments(int argc, char *argv[])
         OPT_SCENETEST,
         OPT_LOGLEVEL,
         OPT_LANGUAGE,
-        OPT_DATADIR,
-        OPT_MOD,
         OPT_LANGDIR,
-        OPT_VBO
+        OPT_DATADIR,
+        OPT_SAVEDIR,
+        OPT_MOD,
+        OPT_VBO,
+        OPT_RESOLUTION,
+        OPT_HEADLESS
     };
 
     option options[] =
@@ -229,10 +242,13 @@ ParseArgsStatus CApplication::ParseArguments(int argc, char *argv[])
         { "scenetest", no_argument, nullptr, OPT_SCENETEST },
         { "loglevel", required_argument, nullptr, OPT_LOGLEVEL },
         { "language", required_argument, nullptr, OPT_LANGUAGE },
-        { "datadir", required_argument, nullptr, OPT_DATADIR },
-        { "mod", required_argument, nullptr, OPT_MOD },
         { "langdir", required_argument, nullptr, OPT_LANGDIR },
+        { "datadir", required_argument, nullptr, OPT_DATADIR },
+        { "savedir", required_argument, nullptr, OPT_SAVEDIR },
+        { "mod", required_argument, nullptr, OPT_MOD },
         { "vbo", required_argument, nullptr, OPT_VBO },
+        { "resolution", required_argument, nullptr, OPT_RESOLUTION },
+        { "headless", no_argument, nullptr, OPT_HEADLESS },
         { nullptr, 0, nullptr, 0}
     };
 
@@ -269,10 +285,13 @@ ParseArgsStatus CApplication::ParseArguments(int argc, char *argv[])
                 GetLogger()->Message("  -scenetest          win every mission right after it's loaded\n");
                 GetLogger()->Message("  -loglevel level     set log level to level (one of: trace, debug, info, warn, error, none)\n");
                 GetLogger()->Message("  -language lang      set language (one of: en, de, fr, pl, ru)\n");
-                GetLogger()->Message("  -datadir path       set custom data directory path\n");
-                GetLogger()->Message("  -mod path           run mod\n");
                 GetLogger()->Message("  -langdir path       set custom language directory path\n");
+                GetLogger()->Message("  -datadir path       set custom data directory path\n");
+                GetLogger()->Message("  -savedir path       set custom save directory path (must be writable)\n");
+                GetLogger()->Message("  -mod path           load datadir mod from given path\n");
                 GetLogger()->Message("  -vbo mode           set OpenGL VBO mode (one of: auto, enable, disable)\n");
+                GetLogger()->Message("  -resolution WxH     set resolution\n");
+                GetLogger()->Message("  -headless           headless mode - disables graphics, sound and user interaction\n");
                 return PARSE_ARGS_HELP;
             }
             case OPT_DEBUG:
@@ -334,25 +353,6 @@ ParseArgsStatus CApplication::ParseArguments(int argc, char *argv[])
                 m_language = language;
                 break;
             }
-            case OPT_DATADIR:
-            {
-                m_dataPath = optarg;
-                m_customDataPath = true;
-                GetLogger()->Info("Using datadir: '%s'\n", optarg);
-                break;
-            }
-            case OPT_MOD:
-            {
-                m_gameData->AddMod(std::string(optarg));
-                GetLogger()->Info("Running mod from path: '%s'\n", optarg);
-                break;
-            }
-            case OPT_LANGDIR:
-            {
-                m_langPath = optarg;
-                GetLogger()->Info("Using language dir: '%s'\n", m_langPath.c_str());
-                break;
-            }
             case OPT_VBO:
             {
                 std::string vbo;
@@ -371,6 +371,47 @@ ParseArgsStatus CApplication::ParseArguments(int argc, char *argv[])
 
                 break;
             }
+            case OPT_DATADIR:
+            {
+                m_dataPath = optarg;
+                GetLogger()->Info("Using data dir: '%s'\n", optarg);
+                break;
+            }
+            case OPT_LANGDIR:
+            {
+                m_langPath = optarg;
+                GetLogger()->Info("Using language dir: '%s'\n", optarg);
+                break;
+            }
+            case OPT_SAVEDIR:
+            {
+                m_savePath = optarg;
+                GetLogger()->Info("Using save dir: '%s'\n", optarg);
+                break;
+            }
+            case OPT_MOD:
+            {
+                GetLogger()->Info("Loading mod: '%s'\n", optarg);
+                CResourceManager::AddLocation(optarg, true);
+                break;
+            }
+            case OPT_RESOLUTION:
+            {
+                std::istringstream resolution(optarg);
+                std::string w, h;
+                std::getline(resolution, w, 'x');
+                std::getline(resolution, h, 'x');
+                
+                m_deviceConfig.size.x = atoi(w.c_str());
+                m_deviceConfig.size.y = atoi(h.c_str());
+                m_resolutionOverride = true;
+                break;
+            }
+            case OPT_HEADLESS:
+            {
+                m_headless = true;
+                break;
+            }
             default:
                 assert(false); // should never get here
         }
@@ -386,32 +427,36 @@ bool CApplication::Create()
 
     GetLogger()->Info("Creating CApplication\n");
 
-    if (!GetProfile().InitCurrentDirectory())
-    {
-        GetLogger()->Warn("Config not found. Default values will be used!\n");
-        defaultValues = true;
-    }
-    else
-    {
-        if (!m_customDataPath && GetProfile().GetLocalProfileString("Resources", "Data", path))
-            m_dataPath = path;
-    }
-
     boost::filesystem::path dataPath(m_dataPath);
     if (! (boost::filesystem::exists(dataPath) && boost::filesystem::is_directory(dataPath)) )
     {
         GetLogger()->Error("Data directory '%s' doesn't exist or is not a directory\n", m_dataPath.c_str());
         m_errorMessage = std::string("Could not read from data directory:\n") +
-                         std::string("'") + m_dataPath + std::string("'\n") +
-                         std::string("Please check your installation, or supply a valid data directory by -datadir option.");
+        std::string("'") + m_dataPath + std::string("'\n") +
+        std::string("Please check your installation, or supply a valid data directory by -datadir option.");
         m_exitCode = 1;
         return false;
     }
-    
-    m_gameData->SetDataDir(std::string(m_dataPath));
-    m_gameData->Init();
 
-    if (GetProfile().GetLocalProfileString("Language", "Lang", path)) {
+    boost::filesystem::create_directories(m_savePath);
+    boost::filesystem::create_directories(m_savePath+"/mods");
+
+    LoadModsFromDir(m_dataPath+"/mods");
+    LoadModsFromDir(m_savePath+"/mods");
+
+    GetLogger()->Info("Data path: %s\n", m_dataPath.c_str());
+    GetLogger()->Info("Save path: %s\n", m_savePath.c_str());
+    CResourceManager::AddLocation(m_dataPath, false);
+    CResourceManager::SetSaveLocation(m_savePath);
+    CResourceManager::AddLocation(m_savePath, true);
+
+    if (!GetProfile().Init())
+    {
+        GetLogger()->Warn("Config not found. Default values will be used!\n");
+        defaultValues = true;
+    }
+
+    if (GetProfile().GetStringProperty("Language", "Lang", path)) {
         Language language;
         if (ParseLanguage(path, language)) {
             m_language = language;
@@ -425,7 +470,11 @@ bool CApplication::Create()
 
     //Create the sound instance.
     #ifdef OPENAL_SOUND
-    m_sound = static_cast<CSoundInterface *>(new ALSound());
+    if(!m_headless) {
+        m_sound = static_cast<CSoundInterface *>(new ALSound());
+    } else {
+        m_sound = new CSoundInterface();
+    }
     #else
     GetLogger()->Info("No sound support.\n");
     m_sound = new CSoundInterface();
@@ -470,34 +519,36 @@ bool CApplication::Create()
         return false;
     }
 
-    // load settings from profile
-    int iValue;
-    if ( GetProfile().GetLocalProfileInt("Setup", "Resolution", iValue) )
-    {
-        std::vector<Math::IntPoint> modes;
-        GetVideoResolutionList(modes, true, true);
-        if (static_cast<unsigned int>(iValue) < modes.size())
-            m_deviceConfig.size = modes.at(iValue);
+    if(!m_headless) {
+        // load settings from profile
+        int iValue;
+        if ( GetProfile().GetIntProperty("Setup", "Resolution", iValue) && !m_resolutionOverride )
+        {
+            std::vector<Math::IntPoint> modes;
+            GetVideoResolutionList(modes, true, true);
+            if (static_cast<unsigned int>(iValue) < modes.size())
+                m_deviceConfig.size = modes.at(iValue);
+        }
+
+        if ( GetProfile().GetIntProperty("Setup", "Fullscreen", iValue) && !m_resolutionOverride )
+        {
+            m_deviceConfig.fullScreen = (iValue == 1);
+        }
+
+        if (! CreateVideoSurface())
+            return false; // dialog is in function
+
+        if (m_private->surface == nullptr)
+        {
+            m_errorMessage = std::string("SDL error while setting video mode:\n") +
+                            std::string(SDL_GetError());
+            GetLogger()->Error(m_errorMessage.c_str());
+            m_exitCode = 4;
+            return false;
+        }
+        
+        SDL_WM_SetCaption(m_windowTitle.c_str(), m_windowTitle.c_str());
     }
-
-    if ( GetProfile().GetLocalProfileInt("Setup", "Fullscreen", iValue) )
-    {
-        m_deviceConfig.fullScreen = (iValue == 1);
-    }
-
-    if (! CreateVideoSurface())
-        return false; // dialog is in function
-
-    if (m_private->surface == nullptr)
-    {
-        m_errorMessage = std::string("SDL error while setting video mode:\n") +
-                         std::string(SDL_GetError());
-        GetLogger()->Error(m_errorMessage.c_str());
-        m_exitCode = 4;
-        return false;
-    }
-
-    SDL_WM_SetCaption(m_windowTitle.c_str(), m_windowTitle.c_str());
 
     // Enable translating key codes of key press events to unicode chars
     SDL_EnableUNICODE(1);
@@ -506,8 +557,12 @@ bool CApplication::Create()
     // Don't generate joystick events
     SDL_JoystickEventState(SDL_IGNORE);
 
-    // The video is ready, we can create and initalize the graphics device
-    m_device = new Gfx::CGLDevice(m_deviceConfig);
+    if(!m_headless) {
+        // The video is ready, we can create and initalize the graphics device
+        m_device = new Gfx::CGLDevice(m_deviceConfig);
+    } else {
+        m_device = new Gfx::CNullDevice();
+    }
     if (! m_device->Create() )
     {
         m_errorMessage = std::string("Error in CDevice::Create()\n") + standardInfoMessage;
@@ -568,8 +623,8 @@ bool CApplication::CreateVideoSurface()
     if (m_deviceConfig.fullScreen)
         videoFlags |= SDL_FULLSCREEN;
 
-    if (m_deviceConfig.resizeable)
-        videoFlags |= SDL_RESIZABLE;
+    //if (m_deviceConfig.resizeable)
+    //    videoFlags |= SDL_RESIZABLE;
 
     // Set OpenGL attributes
 
@@ -594,27 +649,35 @@ bool CApplication::CreateVideoSurface()
     return true;
 }
 
+void CApplication::LoadModsFromDir(const std::string &dir)
+{
+    try {
+        boost::filesystem::directory_iterator iterator(dir);
+        for(; iterator != boost::filesystem::directory_iterator(); ++iterator)
+        {
+            std::string fn = iterator->path().string();
+            CLogger::GetInstancePointer()->Info("Loading mod: '%s'\n", fn.c_str());
+            CResourceManager::AddLocation(fn, false);
+        }
+    }
+    catch(std::exception &e)
+    {
+        CLogger::GetInstancePointer()->Warn("Unable to load mods from directory '%s': %s\n", dir.c_str(), e.what());
+    }
+}
+
 void CApplication::Destroy()
 {
     m_joystickEnabled = false;
 
-    if (m_robotMain != nullptr)
-    {
-        delete m_robotMain;
-        m_robotMain = nullptr;
-    }
+    delete m_robotMain;
+    m_robotMain = nullptr;
 
-    if (m_sound != nullptr)
-    {
-        delete m_sound;
-        m_sound = nullptr;
-    }
+    delete m_sound;
+    m_sound = nullptr;
 
-    if (m_modelManager != nullptr)
-    {
-        delete m_modelManager;
-        m_modelManager = nullptr;
-    }
+    delete m_modelManager;
+    m_modelManager = nullptr;
 
     if (m_engine != nullptr)
     {
@@ -649,6 +712,17 @@ void CApplication::Destroy()
     SDL_Quit();
 }
 
+void CApplication::Restart()
+{
+    m_restart = true;
+    m_eventQueue->AddEvent(Event(EVENT_SYS_QUIT));
+}
+
+bool CApplication::IsRestarting()
+{
+    return m_restart;
+}
+
 bool CApplication::ChangeVideoConfig(const Gfx::GLDeviceConfig &newConfig)
 {
     static bool restore = false;
@@ -674,7 +748,7 @@ bool CApplication::ChangeVideoConfig(const Gfx::GLDeviceConfig &newConfig)
                           std::string(SDL_GetError()) + std::string("\n") +
                           std::string("Previous mode will be restored");
             GetLogger()->Error(error.c_str());
-            GetSystemUtils()->SystemDialog( SDT_ERROR, "COLOBT - Error", error);
+            GetSystemUtils()->SystemDialog( SDT_ERROR, "COLOBOT - Error", error);
 
             restore = true;
             ChangeVideoConfig(m_lastDeviceConfig);
@@ -687,7 +761,7 @@ bool CApplication::ChangeVideoConfig(const Gfx::GLDeviceConfig &newConfig)
             std::string error = std::string("SDL error while restoring previous video mode:\n") +
                           std::string(SDL_GetError());
             GetLogger()->Error(error.c_str());
-            GetSystemUtils()->SystemDialog( SDT_ERROR, "COLOBT - Fatal Error", error);
+            GetSystemUtils()->SystemDialog( SDT_ERROR, "COLOBOT - Fatal Error", error);
 
 
             // Fatal error, so post the quit event
@@ -699,6 +773,7 @@ bool CApplication::ChangeVideoConfig(const Gfx::GLDeviceConfig &newConfig)
     ( static_cast<Gfx::CGLDevice*>(m_device) )->ConfigChanged(m_deviceConfig);
 
     m_engine->ResetAfterDeviceChanged();
+    m_robotMain->ResetAfterDeviceChanged();
 
     return true;
 }

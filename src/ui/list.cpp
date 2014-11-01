@@ -1,19 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012 Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "ui/list.h"
@@ -61,12 +63,10 @@ CList::~CList()
 {
     for (int i = 0; i < LISTMAXDISPLAY; i++)
     {
-        if (m_button[i] != nullptr)
-            delete m_button[i];
+        delete m_button[i];
     }
 
-    if (m_scroll != nullptr)
-        delete m_scroll;
+    delete m_scroll;
 }
 
 
@@ -388,7 +388,7 @@ void CList::Draw()
 
         if (m_icon == 0)
         {
-            m_engine->SetTexture("button2.png");
+            m_engine->SetTexture("textures/interface/button2.png");
             m_engine->SetState(Gfx::ENG_RSTATE_NORMAL);
 
             uv1.x = 128.0f / 256.0f;
@@ -398,7 +398,7 @@ void CList::Draw()
         }
         else
         {
-            m_engine->SetTexture("button2.png");
+            m_engine->SetTexture("textures/interface/button2.png");
             m_engine->SetState(Gfx::ENG_RSTATE_NORMAL);
 
             uv1.x = 132.0f / 256.0f;
@@ -434,7 +434,7 @@ void CList::Draw()
             dim.y *= 0.4f;
             pos.y -= dim.y;
 
-            m_engine->SetTexture("button2.png");
+            m_engine->SetTexture("textures/interface/button2.png");
             m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_WHITE); // was D3DSTATETTw
             uv1.x = 120.0f / 256.0f;
             uv1.y =  64.0f / 256.0f;
@@ -509,7 +509,7 @@ void CList::Draw()
 
                 if ( m_check[i + m_firstLine] )
                 {
-                    m_engine->SetTexture("button1.png");
+                    m_engine->SetTexture("textures/interface/button1.png");
                     m_engine->SetState(Gfx::ENG_RSTATE_NORMAL);
                     uv1.x = 64.0f / 256.0f;
                     uv1.y =  0.0f / 256.0f;
@@ -534,7 +534,7 @@ void CList::Draw()
                 }
                 else
                 {
-                    m_engine->SetTexture("button1.png");
+                    m_engine->SetTexture("textures/interface/button1.png");
                     m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_WHITE); // was D3DSTATETTw
                     if ( i + m_firstLine == m_selectLine )
                     {

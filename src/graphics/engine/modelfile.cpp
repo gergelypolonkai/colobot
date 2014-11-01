@@ -1,19 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "graphics/engine/modelfile.h"
@@ -21,6 +23,10 @@
 #include "common/ioutils.h"
 #include "common/logger.h"
 #include "common/stringutils.h"
+
+#ifndef MODELFILE_NO_ENGINE
+#include "common/resources/inputstream.h"
+#endif
 
 #include "graphics/engine/engine.h"
 
@@ -432,13 +438,23 @@ bool CModelFile::ReadModel(const std::string& fileName)
 {
     m_triangles.clear();
 
+    #ifndef MODELFILE_NO_ENGINE
+    CInputStream stream;
+    stream.open(fileName);
+    if (!stream.is_open())
+    {
+        GetLogger()->Error("Could not open file '%s'\n", fileName.c_str());
+        return false;
+    }
+    #else
     std::ifstream stream;
-    stream.open(fileName.c_str(), std::ios_base::in | std::ios_base::binary);
+    stream.open(fileName);
     if (!stream.good())
     {
         GetLogger()->Error("Could not open file '%s'\n", fileName.c_str());
         return false;
     }
+    #endif
 
     return ReadModel(stream);
 }
@@ -823,13 +839,23 @@ struct NewModelTriangle1
 
 bool CModelFile::ReadTextModel(const std::string& fileName)
 {
+    #ifndef MODELFILE_NO_ENGINE
+    CInputStream stream;
+    stream.open(fileName);
+    if (!stream.is_open())
+    {
+        GetLogger()->Error("Could not open file '%s'\n", fileName.c_str());
+        return false;
+    }
+    #else
     std::ifstream stream;
-    stream.open(fileName.c_str(), std::ios_base::in);
+    stream.open(fileName);
     if (!stream.good())
     {
         GetLogger()->Error("Could not open file '%s'\n", fileName.c_str());
         return false;
     }
+    #endif
 
     return ReadTextModel(stream);
 }
@@ -1020,13 +1046,23 @@ bool CModelFile::WriteTextModel(std::ostream& stream)
 
 bool CModelFile::ReadBinaryModel(const std::string& fileName)
 {
+    #ifndef MODELFILE_NO_ENGINE
+    CInputStream stream;
+    stream.open(fileName);
+    if (!stream.is_open())
+    {
+        GetLogger()->Error("Could not open file '%s'\n", fileName.c_str());
+        return false;
+    }
+    #else
     std::ifstream stream;
-    stream.open(fileName.c_str(), std::ios_base::in | std::ios_base::binary);
+    stream.open(fileName);
     if (!stream.good())
     {
         GetLogger()->Error("Could not open file '%s'\n", fileName.c_str());
         return false;
     }
+    #endif
 
     return ReadBinaryModel(stream);
 }

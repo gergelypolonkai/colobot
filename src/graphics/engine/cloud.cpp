@@ -1,19 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "graphics/engine/cloud.h"
@@ -125,8 +127,8 @@ void CCloud::Draw()
     material.ambient = m_ambient;
     m_engine->SetMaterial(material);
 
-    m_engine->SetTexture(m_fileName, 0);
-    m_engine->SetTexture(m_fileName, 1);
+    m_engine->SetTexture("textures/"+m_fileName, 0);
+    m_engine->SetTexture("textures/"+m_fileName, 1);
 
     m_engine->SetState(ENG_RSTATE_TTEXTURE_BLACK | ENG_RSTATE_FOG | ENG_RSTATE_WRAP);
 
@@ -218,7 +220,7 @@ void CCloud::Create(const std::string& fileName,
     m_fileName = fileName;
 
     if (! m_fileName.empty())
-        m_engine->LoadTexture(m_fileName);
+        m_engine->LoadTexture("textures/"+m_fileName);
 
     if (m_terrain == nullptr)
         m_terrain = CRobotMain::GetInstancePointer()->GetTerrain();

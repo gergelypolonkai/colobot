@@ -6,6 +6,9 @@ Makefile
 /install_manifest.txt
 /Testing
 /CTestTestfile.cmake
+/CPackConfig.cmake
+/CPackSourceConfig.cmake
+/src/libcolobotbase.a
 
 # Ignore the generated documentation
 /doc

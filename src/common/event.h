@@ -1,18 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 /**
  * \file common/event.h
@@ -90,7 +93,6 @@ enum EventType
     EVENT_BUTTON_CANCEL     = 41,
     EVENT_BUTTON_NEXT       = 42,
     EVENT_BUTTON_PREV       = 43,
-    EVENT_BUTTON_QUIT       = 44,
 
     EVENT_BUTTON0           = 50,
     EVENT_BUTTON1           = 51,
@@ -193,7 +195,6 @@ enum EventType
     EVENT_INTERFACE_READ    = 411,
     EVENT_INTERFACE_ABORT   = 412,
     EVENT_INTERFACE_USER    = 413,
-    EVENT_INTERFACE_TEEN    = 414,
 
     EVENT_INTERFACE_CHAP    = 420,
     EVENT_INTERFACE_LIST    = 421,
@@ -239,6 +240,7 @@ enum EventType
     EVENT_INTERFACE_EDITMODE= 476,
     EVENT_INTERFACE_EDITVALUE= 477,
     EVENT_INTERFACE_SOLUCE4 = 478,
+    EVENT_INTERFACE_BLOOD   = 479,
 
     EVENT_INTERFACE_KINFO1  = 500,
     EVENT_INTERFACE_KINFO2  = 501,

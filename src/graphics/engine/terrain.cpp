@@ -1,25 +1,26 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "graphics/engine/terrain.h"
 
 #include "app/app.h"
-#include "app/gamedata.h"
 
 #include "common/image.h"
 #include "common/logger.h"
@@ -122,7 +123,8 @@ bool CTerrain::InitTextures(const std::string& baseName, int* table, int dx, int
     m_useMaterials = false;
 
     m_texBaseName = baseName;
-    size_t pos = baseName.find('.');
+    size_t pos = baseName.rfind('.');
+    if(pos < baseName.find_last_of('/')) pos = std::string::npos; // If last . is not a part of filename (some directory, possibly . or ..)
 
     if (pos == std::string::npos)
     {
@@ -190,10 +192,10 @@ void CTerrain::AddMaterial(int id, const std::string& texName, const Math::Point
 bool CTerrain::LoadResources(const std::string& fileName)
 {
     CImage img;
-    std::string path = CGameData::GetInstancePointer()->GetFilePath(DIR_TEXTURE, fileName);
-    if (! img.Load(path))
+
+    if (! img.Load(fileName))
     {
-        GetLogger()->Error("Cannot load resource file: '%s'\n", path.c_str());
+        GetLogger()->Error("Cannot load resource file: '%s'\n", fileName.c_str());
         return false;
     }
 
@@ -287,10 +289,10 @@ bool CTerrain::LoadRelief(const std::string &fileName, float scaleRelief,
     m_scaleRelief = scaleRelief;
 
     CImage img;
-    std::string path = CGameData::GetInstancePointer()->GetFilePath(DIR_TEXTURE, fileName);
-    if (! img.Load(path))
+
+    if (! img.Load(fileName))
     {
-        GetLogger()->Error("Could not load relief file: '%s'!\n", path.c_str());
+        GetLogger()->Error("Could not load relief file: '%s'!\n", fileName.c_str());
         return false;
     }
 
@@ -366,17 +368,11 @@ bool CTerrain::RandomizeRelief()
                 double xi, yi, a, b;
                 a = modf(x * (rozmiar_oktawy-1), &xi);
                 b = modf(y * (rozmiar_oktawy-1), &yi);
-                /*int xi = floor(x * (rozmiar_oktawy-1));
-                int yi = floor(y * (rozmiar_oktawy-1));
-                float a = (x * (rozmiar_oktawy-1)) - xi;
-                float b = (y * (rozmiar_oktawy-1)) - yi;*/
-                //CLogger::GetInstancePointer()->Error("%f %f %f %f\n", xi, yi, a, b);
                 
                 float lg = oktawy[i][static_cast<int>(yi * rozmiar_oktawy + xi)];
                 float pg = oktawy[i][static_cast<int>(yi * rozmiar_oktawy + xi + 1)];
                 float ld = oktawy[i][static_cast<int>((yi+1) * rozmiar_oktawy + xi)];
                 float pd = oktawy[i][static_cast<int>((yi+1) * rozmiar_oktawy + xi + 1)];
-                //CLogger::GetInstancePointer()->Error("%f %f %f %f\n", lg, pg, ld, pd);
                 
                 float g = pg * a + lg * (1-a);
                 float d = pd * a + ld * (1-a);

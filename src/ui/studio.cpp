@@ -1,19 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012 Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "ui/studio.h"
@@ -21,6 +23,8 @@
 #include "CBot/CBotDll.h"
 
 #include "app/app.h"
+
+#include "common/resources/resourcemanager.h"
 
 #include "common/event.h"
 #include "common/misc.h"
@@ -167,7 +171,7 @@ bool CStudio::EventProcess(const Event &event)
     {
         slider = static_cast< CSlider* >(pw->SearchControl(EVENT_STUDIO_SIZE));
         if ( slider == nullptr )  return false;
-        m_main->SetFontSize(9.0f+slider->GetVisibleValue()*12.0f);
+        m_main->SetFontSize(9.0f+slider->GetVisibleValue()*15.0f);
         ViewEditScript();
     }
 
@@ -573,10 +577,6 @@ void CStudio::StartEditScript(CScript *script, std::string name, int rank)
     m_bRealTime = m_bRunning;
     m_script->SetStepMode(!m_bRealTime);
 
-    button = static_cast< CButton* >(m_interface->SearchControl(EVENT_BUTTON_QUIT));
-    if (button != nullptr)
-        button->ClearState(STATE_VISIBLE);
-
     pos = m_editFinalPos = m_editActualPos = m_main->GetWindowPos();
     dim = m_editFinalDim = m_editActualDim = m_main->GetWindowDim();
     pw = m_interface->CreateWindows(pos, dim, 8, EVENT_WINDOW3);
@@ -638,7 +638,7 @@ void CStudio::StartEditScript(CScript *script, std::string name, int rank)
     button->SetState(STATE_SHADOW);
     slider = pw->CreateSlider(pos, dim, 0, EVENT_STUDIO_SIZE);
     slider->SetState(STATE_SHADOW);
-    slider->SetVisibleValue((m_main->GetFontSize()-9.0f)/6.0f);
+    slider->SetVisibleValue((m_main->GetFontSize()-9.0f)/15.0f);
     pw->CreateGroup(pos, dim, 19, EVENT_LABEL1);  // SatCom logo
     button = pw->CreateButton(pos, dim, 128+57, EVENT_STUDIO_TOOL);
     button->SetState(STATE_SHADOW);
@@ -854,7 +854,6 @@ bool CStudio::StopEditScript(bool bCancel)
 {
     CWindow*    pw;
     CEdit*      edit;
-    CButton*    button;
 
     pw = static_cast< CWindow* >(m_interface->SearchControl(EVENT_WINDOW3));
     if ( pw == nullptr )  return false;
@@ -876,12 +875,6 @@ bool CStudio::StopEditScript(bool bCancel)
     m_script->SetStepMode(false);
 
     m_interface->DeleteControl(EVENT_WINDOW3);
-
-    button = static_cast< CButton* >(m_interface->SearchControl(EVENT_BUTTON_QUIT));
-    if ( button != 0 )
-    {
-        button->SetState(STATE_VISIBLE);
-    }
 
     m_pause->SetPause(m_bInitPause);
     m_sound->MuteAll(false);
@@ -1532,8 +1525,8 @@ void CStudio::UpdateDialogList()
 
 // Constructs the name of the folder or open/save.
 // If the folder does not exist, it will be created.
-
-std::string CStudio::SearchDirectory(bool bCreate)
+//TODO: Refactor to PHYSFS
+std::string CStudio::SearchDirectory(bool bCreate, bool physfsReady)
 {
     char dir[MAX_FNAME];
     if ( m_main->GetIOPublic() )
@@ -1545,14 +1538,20 @@ std::string CStudio::SearchDirectory(bool bCreate)
         sprintf(dir, "%s/%s/Program/", m_main->GetSavegameDir(), m_main->GetGamerName());
     }
 
-    fs::path path = fs::path(dir);
-
     if ( bCreate )
     {
-        fs::create_directory(path);
+        fs::path path = fs::path(dir);
+        fs::create_directories(path);
     }
 
-    return path.make_preferred().string();
+    std::string dir2 = dir;
+    if(physfsReady) {
+        std::string savedir = CResourceManager::GetSaveLocation()+"/";
+        boost::replace_all(dir2, "\\", "/");
+        boost::replace_all(savedir, "\\", "/");
+        boost::replace_all(dir2, savedir, "");
+    }
+    return dir2;
 }
 
 // Reads a new program.
@@ -1578,7 +1577,7 @@ bool CStudio::ReadProgram()
     {
         strcat(filename, ".txt");
     }
-    strcpy(dir, SearchDirectory(true).c_str());
+    strcpy(dir, SearchDirectory(true, true).c_str());
     strcat(dir, filename);
 
     pw = static_cast< CWindow* >(m_interface->SearchControl(EVENT_WINDOW3));
@@ -1616,14 +1615,14 @@ bool CStudio::WriteProgram()
     {
         strcat(filename, ".txt");
     }
-    strcpy(dir, SearchDirectory(true).c_str());
+    strcpy(dir, SearchDirectory(true, true).c_str());
     strcat(dir, filename);
 
     pw = static_cast< CWindow* >(m_interface->SearchControl(EVENT_WINDOW3));
     if ( pw == nullptr )  return false;
     pe = static_cast< CEdit* >(pw->SearchControl(EVENT_STUDIO_EDIT));
     if ( pe == nullptr )  return false;
-
+    
     if ( !pe->WriteText(std::string(dir)) )  return false;
 
     m_script->SetFilename(filename);

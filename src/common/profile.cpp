@@ -1,26 +1,32 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "common/profile.h"
 
-#include "common/logger.h"
-
+#include "common/resources/inputstream.h"
+#include "common/resources/outputstream.h"
 #include "app/system.h"
 
+#include "common/logger.h"
+
+#include <memory>
 #include <utility>
 #include <cstring>
 #include <boost/property_tree/ini_parser.hpp>
@@ -31,27 +37,51 @@ template<> CProfile* CSingleton<CProfile>::m_instance = nullptr;
 
 namespace bp = boost::property_tree;
 
-CProfile::CProfile() :
-    m_profileNeedSave(false)
+CProfile::CProfile()
+   : m_profileNeedSave(false)
+   , m_useCurrentDirectory(false)
 {
 }
 
 
 CProfile::~CProfile()
 {
-    SaveCurrentDirectory();
+    Save();
 }
 
+void CProfile::SetUseCurrentDirectory(bool useCurrentDirectory)
+{
+    m_useCurrentDirectory = useCurrentDirectory;
+}
 
-bool CProfile::InitCurrentDirectory()
+bool CProfile::Init()
 {
     try
     {
-        #if DEV_BUILD
-        bp::ini_parser::read_ini("colobot.ini", m_propertyTree);
-        #else
-        bp::ini_parser::read_ini(GetSystemUtils()->GetProfileFileLocation(), m_propertyTree);
-        #endif
+        std::unique_ptr<std::istream> stream;
+        bool good;
+        if (m_useCurrentDirectory)
+        {
+            std::ifstream* inputStream = new std::ifstream("./colobot.ini");
+            stream = std::unique_ptr<std::istream>(inputStream);
+            good = inputStream->good();
+        }
+        else
+        {
+            CInputStream* inputStream = new CInputStream("colobot.ini");
+            stream = std::unique_ptr<std::istream>(inputStream);
+            good = inputStream->is_open();
+        }
+
+        if (good)
+        {
+            bp::ini_parser::read_ini(*stream, m_propertyTree);
+        }
+        else
+        {
+            GetLogger()->Error("Error on parsing profile: failed to open file\n");
+            return false;
+        }
     }
     catch (std::exception & e)
     {
@@ -61,17 +91,36 @@ bool CProfile::InitCurrentDirectory()
     return true;
 }
 
-bool CProfile::SaveCurrentDirectory()
+bool CProfile::Save()
 {
     if (m_profileNeedSave)
     {
         try
         {
-            #if DEV_BUILD
-            bp::ini_parser::write_ini("colobot.ini", m_propertyTree);
-            #else
-            bp::ini_parser::write_ini(GetSystemUtils()->GetProfileFileLocation(), m_propertyTree);
-            #endif
+            std::unique_ptr<std::ostream> stream;
+            bool good;
+            if (m_useCurrentDirectory)
+            {
+                std::ofstream* outputStream = new std::ofstream("./colobot.ini");
+                stream = std::unique_ptr<std::ostream>(outputStream);
+                good = outputStream->good();
+            }
+            else
+            {
+                COutputStream* outputStream = new COutputStream("colobot.ini");
+                stream = std::unique_ptr<std::ostream>(outputStream);
+                good = outputStream->is_open();
+            }
+
+            if (good)
+            {
+                bp::ini_parser::write_ini(*stream, m_propertyTree);
+            }
+            else
+            {
+                GetLogger()->Error("Error on storing profile: failed to open file\n");
+                return false;
+            }
         }
         catch (std::exception & e)
         {
@@ -82,7 +131,7 @@ bool CProfile::SaveCurrentDirectory()
     return true;
 }
 
-bool CProfile::SetLocalProfileString(std::string section, std::string key, std::string value)
+bool CProfile::SetStringProperty(std::string section, std::string key, std::string value)
 {
     try
     {
@@ -98,7 +147,7 @@ bool CProfile::SetLocalProfileString(std::string section, std::string key, std::
 }
 
 
-bool CProfile::GetLocalProfileString(std::string section, std::string key, std::string &buffer)
+bool CProfile::GetStringProperty(std::string section, std::string key, std::string &buffer)
 {
     try
     {
@@ -113,7 +162,7 @@ bool CProfile::GetLocalProfileString(std::string section, std::string key, std::
 }
 
 
-bool CProfile::SetLocalProfileInt(std::string section, std::string key, int value)
+bool CProfile::SetIntProperty(std::string section, std::string key, int value)
 {
     try
     {
@@ -129,7 +178,7 @@ bool CProfile::SetLocalProfileInt(std::string section, std::string key, int valu
 }
 
 
-bool CProfile::GetLocalProfileInt(std::string section, std::string key, int &value)
+bool CProfile::GetIntProperty(std::string section, std::string key, int &value)
 {
     try
     {
@@ -144,7 +193,7 @@ bool CProfile::GetLocalProfileInt(std::string section, std::string key, int &val
 }
 
 
-bool CProfile::SetLocalProfileFloat(std::string section, std::string key, float value)
+bool CProfile::SetFloatProperty(std::string section, std::string key, float value)
 {
     try
     {
@@ -160,7 +209,7 @@ bool CProfile::SetLocalProfileFloat(std::string section, std::string key, float 
 }
 
 
-bool CProfile::GetLocalProfileFloat(std::string section, std::string key, float &value)
+bool CProfile::GetFloatProperty(std::string section, std::string key, float &value)
 {
     try
     {
@@ -175,7 +224,7 @@ bool CProfile::GetLocalProfileFloat(std::string section, std::string key, float 
 }
 
 
-std::vector< std::string > CProfile::GetLocalProfileSection(std::string section, std::string key)
+std::vector< std::string > CProfile::GetSection(std::string section, std::string key)
 {
     std::vector< std::string > ret_list;
     boost::regex re(key + "[0-9]*"); //we want to match all key followed by any number
@@ -196,54 +245,5 @@ std::vector< std::string > CProfile::GetLocalProfileSection(std::string section,
     }
 
     return ret_list;
-}
-
-
-void CProfile::SetUserDir(std::string dir)
-{
-    m_userDirectory = dir;
-}
-
-
-std::string CProfile::GetUserBasedPath(std::string dir, std::string default_dir)
-{
-    std::string path = dir;
-    boost::replace_all(path, "\\", "/");
-    if (dir.find("/") == std::string::npos)
-    {
-        path = default_dir + "/" + dir;
-    }
-
-    if (m_userDirectory.length() > 0)
-    {
-        boost::replace_all(path, "%user%", m_userDirectory);
-    }
-    else
-    {
-        boost::replace_all(path, "%user%", default_dir);
-    }
-
-    return fs::path(path).make_preferred().string();
-}
-
-
-bool CProfile::CopyFileToTemp(std::string filename)
-{
-    std::string src, dst;
-    std::string tmp_user_dir = m_userDirectory;
-
-    src = GetUserBasedPath(filename, "textures");
-    SetUserDir("temp");
-    dst = GetUserBasedPath(filename, "textures");
-    SetUserDir(tmp_user_dir);
-
-    fs::create_directory(fs::path(dst).parent_path().make_preferred().string());
-    fs::copy_file(src, dst, fs::copy_option::overwrite_if_exists);
-    if (fs::exists(dst))
-    {
-        return true;
-    }
-
-    return false;
 }
 

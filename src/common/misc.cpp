@@ -1,18 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "common/misc.h"
@@ -23,6 +26,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <sstream>
+#include <iomanip>
 
 
 // Returns a non-accented letter.
@@ -229,42 +234,15 @@ void TimeToAsciiClean(time_t time, char *buffer)
                     when.tm_hour, when.tm_min);
 }
 
-// Copy a list of numbered files into the temporary folder.
-
-bool CopyFileListToTemp(char* filename, int* list, int total)
+std::string TimeFormat(float time)
 {
-    /*char    name[100];
-    char    ext[10];
-    char    file[100];
-    char    save[100];
-    char*   p;
-    int     i;
-
-    strcpy(name, filename);
-    p = strchr(name, '.');
-    if ( p == 0 )
-    {
-        strcpy(ext, ".tga");
-    }
-    else
-    {
-        strcpy(ext, p);
-        *p = 0;
-    }
-
-    for ( i=0 ; i<total ; i++ )
-    {
-        sprintf(file, "%s%.3d%s", name, list[i], ext);  // nameNNN.ext
-        CopyFileToTemp(file);
-    }
-
-    strcpy(save, g_userDir);
-    strcpy(g_userDir, "temp");
-    UserDir(file, filename, "textures");
-    strcpy(filename, file);
-    strcpy(g_userDir, save);
-*/
-    return false;
+    int minutes = floor(time/60);
+    double time2 = fmod(time, 60);
+    double seconds;
+    double fraction = modf(time2, &seconds)*100;
+    std::ostringstream sstream;
+    sstream << std::setfill('0') << std::setw(2) << minutes << ":" << std::setfill('0') << std::setw(2) << floor(seconds) << "." << std::setfill('0') << std::setw(2) << floor(fraction);
+    return sstream.str();
 }
 
 

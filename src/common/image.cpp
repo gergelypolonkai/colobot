@@ -1,23 +1,27 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "common/image.h"
 
 #include "math/func.h"
+#include "common/resources/resourcemanager.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -381,7 +385,16 @@ bool CImage::Load(const std::string& fileName)
 
     m_error = "";
 
-    m_data->surface = IMG_Load(fileName.c_str());
+    SDL_RWops* pointer = CResourceManager::GetSDLFileHandler(fileName.c_str());
+    if (pointer == nullptr)
+    {
+        delete m_data;
+        m_data = nullptr;
+            
+        m_error = "Unable to open file";
+        return false;
+    }
+    m_data->surface = IMG_Load_RW(pointer, 1);
     if (m_data->surface == nullptr)
     {
         delete m_data;

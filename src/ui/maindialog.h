@@ -1,18 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 // maindialog.h
 
@@ -88,7 +91,8 @@ public:
     int           GetSceneRank();
     const char*   GetSceneDir();
     bool          GetSceneSoluce();
-    std::string & GetSavegameDir();
+    std::string   GetSavegameDir();
+    std::string & GetPHYSFSSavegameDir();
     std::string & GetPublicDir();
 
     bool    GetTooltip();
@@ -98,8 +102,7 @@ public:
     bool    GetNiceReset();
     bool    GetHimselfDamage();
 
-    void          SetUserDir(char *base, int rank);
-    void          BuildSceneName(std::string &filename, char *base, int rank);
+    void          BuildSceneName(std::string &filename, char *base, int rank, bool sceneFile = true);
     void          BuildResumeName(char *filename, char *base, int rank);
     std::string & GetFilesDir();
 
@@ -140,6 +143,8 @@ public:
 
     void    AllMissionUpdate();
     void    ShowSoluceUpdate();
+    
+    std::string& GetUserLevelName(int id);
 
 protected:
     void    GlintMove();
@@ -169,7 +174,6 @@ protected:
     void    UpdateSceneChap(int &chap);
     void    UpdateSceneList(int chap, int &sel);
     void    UpdateSceneResume(int rank);
-    void    UpdateDisplayDevice();
     void    UpdateDisplayMode();
     void    ChangeDisplay();
     void    UpdateApply();
@@ -200,10 +204,8 @@ protected:
     int         m_persoTab;         // perso: tab selected
     float           m_persoAngle;           // perso: angle of presentation
 
-    std::string     m_sceneDir;     // scene folder
     std::string     m_savegameDir;  // savegame folder
     std::string     m_publicDir;    // program folder
-    std::string     m_userDir;      // user folder
     std::string     m_filesDir;     // case files
 
     int             m_index;        // 0..4
@@ -229,7 +231,6 @@ protected:
     int             m_shotDelay;        // number of frames before copy
     std::string     m_shotName;        // generate a file name
 
-    int             m_setupSelDevice;
     int             m_setupSelMode;
     bool            m_setupFull;
 
@@ -244,6 +245,7 @@ protected:
     bool            m_bCameraInvertX;       // for CCamera
     bool            m_bCameraInvertY;       // for CCamera
     bool            m_bEffect;          // for CCamera
+    bool            m_bBlood;          // for CCamera
 
     Math::Point          m_glintMouse;
     float                m_glintTime;

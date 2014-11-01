@@ -1,24 +1,24 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012 Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "sound/oalsound/alsound.h"
-
-#include "app/gamedata.h"
 
 #include <algorithm>
 #include <iomanip>
@@ -58,20 +58,14 @@ void ALSound::CleanUp()
             delete channel.second;
         }
 
-        if (m_currentMusic)
-        {
-            delete m_currentMusic;
-        }
-        
+        delete m_currentMusic;
+
         for (auto item : m_oldMusic)
         {
             delete item.music;
         }
-        
-        if (m_previousMusic.music)
-        {
-            delete m_previousMusic.music;
-        }
+
+        delete m_previousMusic.music;
 
         for (auto item : m_sounds)
         {
@@ -165,7 +159,7 @@ int ALSound::GetMusicVolume()
 bool ALSound::Cache(Sound sound, const std::string &filename)
 {
     Buffer *buffer = new Buffer();
-    if (buffer->LoadFromFile(CGameData::GetInstancePointer()->GetFilePath(DIR_SOUND, filename), sound))
+    if (buffer->LoadFromFile(filename, sound))
     {
         m_sounds[sound] = buffer;
         return true;
@@ -175,12 +169,12 @@ bool ALSound::Cache(Sound sound, const std::string &filename)
 
 bool ALSound::CacheMusic(const std::string &filename)
 {
-    if (m_music.find(filename) == m_music.end())
+    if (m_music.find("music/"+filename) == m_music.end())
     {
         Buffer *buffer = new Buffer();
-        if (buffer->LoadFromFile(CGameData::GetInstancePointer()->GetFilePath(DIR_MUSIC, filename), static_cast<Sound>(-1)))
+        if (buffer->LoadFromFile("music/"+filename, static_cast<Sound>(-1)))
         {
-            m_music[filename] = buffer;
+            m_music["music/"+filename] = buffer;
             return true;
         }
     }
@@ -301,6 +295,7 @@ bool ALSound::SearchFreeBuffer(Sound sound, int &channel, bool &bAlreadyLoaded)
                 }
                 delete chn;
                 GetLogger()->Debug("Could not open additional channel to play sound!\n");
+                break;
             }
         }
     }
@@ -635,30 +630,29 @@ bool ALSound::PlayMusic(const std::string &filename, bool bRepeat, float fadeTim
         return false;
     }
 
-    std::string file = CGameData::GetInstancePointer()->GetFilePath(DIR_MUSIC, filename);
     Buffer *buffer;
 
     // check if we have music in cache
-    if (m_music.find(filename) == m_music.end())
+    if (m_music.find("music/"+filename) == m_music.end())
     {
         GetLogger()->Debug("Music %s was not cached!\n", filename.c_str());
-        if (!boost::filesystem::exists(file))
+        /* TODO: if (!boost::filesystem::exists("music/"+filename))
         {
             GetLogger()->Debug("Requested music %s was not found.\n", filename.c_str());
             return false;
-        }
+        } */
 
         buffer = new Buffer();
-        if (!buffer->LoadFromFile(file, static_cast<Sound>(-1)))
+        if (!buffer->LoadFromFile("music/"+filename, static_cast<Sound>(-1)))
         {
             return false;
         }
-        m_music[filename] = buffer;
+        m_music["music/"+filename] = buffer;
     }
     else
     {
         GetLogger()->Debug("Music loaded from cache\n");
-        buffer = m_music[filename];
+        buffer = m_music["music/"+filename];
     }
 
     if (m_currentMusic)

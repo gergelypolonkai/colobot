@@ -1,19 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-//
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "ui/control.h"
@@ -437,7 +439,7 @@ void CControl::Draw()
 
     if ( (m_state & STATE_VISIBLE) == 0 )  return;
 
-    m_engine->SetTexture("button1.png");
+    m_engine->SetTexture("textures/interface/button1.png");
     m_engine->SetState(Gfx::ENG_RSTATE_NORMAL);
 
     zoomExt = 1.00f;
@@ -491,7 +493,7 @@ void CControl::Draw()
 
     if ( m_state & STATE_OKAY )
     {
-        m_engine->SetTexture("button3.png");
+        m_engine->SetTexture("textures/interface/button3.png");
         icon = 3;  // yellow with green point pressed
     }
 
@@ -506,19 +508,19 @@ void CControl::Draw()
         if ( icon >= 192 )
         {
             icon -= 192;
-            m_engine->SetTexture("text.png");
+            m_engine->SetTexture("textures/interface/text.png");
             m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_WHITE);
         }
         else if ( icon >= 128 )
         {
             icon -= 128;
-            m_engine->SetTexture("button3.png");
+            m_engine->SetTexture("textures/interface/button3.png");
             m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_WHITE);
         }
         else if ( icon >= 64 )
         {
             icon -= 64;
-            m_engine->SetTexture("button2.png");
+            m_engine->SetTexture("textures/interface/button2.png");
             m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_WHITE);
         }
         else
@@ -751,7 +753,7 @@ void CControl::DrawWarning(Math::Point pos, Math::Point dim)
 
     dp = 0.5f / 256.0f;
 
-    m_engine->SetTexture("button2.png");
+    m_engine->SetTexture("textures/interface/button2.png");
     m_engine->SetState(Gfx::ENG_RSTATE_NORMAL);
 
     uv1.x =  64.0f / 256.0f;
@@ -795,7 +797,7 @@ void CControl::DrawShadow(Math::Point pos, Math::Point dim, float deep)
 
     dp = 0.5f/256.0f;
 
-    m_engine->SetTexture("button2.png");
+    m_engine->SetTexture("textures/interface/button2.png");
     m_engine->SetState( Gfx::ENG_RSTATE_TTEXTURE_WHITE);
 
     pos.x += deep * 0.010f * 0.75f;

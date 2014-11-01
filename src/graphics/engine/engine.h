@@ -1,19 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX&  EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 /**
  * \file graphics/engine/engine.h
@@ -775,6 +777,12 @@ public:
     void            AddStatisticTriangle(int nb);
     //! Returns the number of triangles in current frame
     int             GetStatisticTriangle();
+    
+    //! Sets the coordinates to display in stats window
+    void            SetStatisticPos(Math::Vector pos);
+    
+    //! Sets text to display as mission timer
+    void            SetTimerDisplay(const std::string& text);
 
 
     /* *************** Object management *************** */
@@ -1231,6 +1239,8 @@ protected:
     void        DrawMouseSprite(Math::Point pos, Math::Point dim, int icon);
     //! Draw statistic texts
     void        DrawStats();
+    //! Draw mission timer
+    void        DrawTimer();
 
     //! Creates a new tier 2 object (texture)
     EngineBaseObjTexTier&  AddLevel2(EngineBaseObject& p1, const std::string& tex1Name, const std::string& tex2Name);
@@ -1346,6 +1356,7 @@ protected:
     float           m_fogStart[2];
     Color           m_waterAddColor;
     int             m_statisticTriangle;
+    Math::Vector    m_statisticPos;
     bool            m_updateGeometry;
     bool            m_updateStaticBuffers;
     int             m_alphaMode;
@@ -1436,6 +1447,8 @@ protected:
 
     bool            m_debugLights;
     bool            m_debugDumpLights;
+    
+    std::string     m_timerText;
 };
 
 

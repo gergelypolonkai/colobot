@@ -1,18 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "graphics/opengl/gldevice.h"
@@ -65,6 +68,7 @@ CGLDevice::CGLDevice(const GLDeviceConfig &config)
     m_lastVboId = 0;
     m_multitextureAvailable = false;
     m_vboAvailable = false;
+    m_vertexBufferType = VBT_DISPLAY_LIST;
 }
 
 
@@ -183,7 +187,7 @@ bool CGLDevice::Create()
 {
     GetLogger()->Info("Creating CDevice\n");
 
-    static bool glewInited = false;
+    /*static*/ bool glewInited = false;
 
     if (!glewInited)
     {
@@ -204,22 +208,43 @@ bool CGLDevice::Create()
         if (m_config.vboMode == VBO_MODE_ENABLE)
         {
             GetLogger()->Info("VBO enabled by override - using VBOs\n");
-            m_vboAvailable = true;
+            SetVertexBufferType(VBT_VBO_CORE);
         }
         else if (m_config.vboMode == VBO_MODE_DISABLE)
         {
             GetLogger()->Info("VBO disabled by override - using display lists\n");
-            m_vboAvailable = false;
+            SetVertexBufferType(VBT_DISPLAY_LIST);
         }
         else
         {
             GetLogger()->Info("Auto-detecting VBO support\n");
-            m_vboAvailable = glewIsSupported("GL_ARB_vertex_buffer_object");
+            
+            // extracting OpenGL version
+            const char *version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+            int major = 0, minor = 0;
 
-            if (m_vboAvailable)
-                GetLogger()->Info("Detected ARB_vertex_buffer_object extension - using VBOs\n");
-            else
-                GetLogger()->Info("No ARB_vertex_buffer_object extension present - using display lists\n");
+            sscanf(version, "%d.%d", &major, &minor);
+            
+            // detecting VBO ARB extension
+            bool vboARB = glewIsSupported("GL_ARB_vertex_buffer_object");
+
+            // VBO is core OpenGL feature since 1.5
+            // everything below 1.5 means no VBO support
+            if(major > 1 || minor > 4)
+            {
+                GetLogger()->Info("OpenGL %d.%d, VBO supported\n", major, minor);
+                SetVertexBufferType(VBT_VBO_CORE);
+            }
+            else if(vboARB)     // VBO ARB extension available
+            {
+                GetLogger()->Info("OpenGL %d.%d with GL_ARB_vertex_buffer_object, VBO supported\n", major, minor);
+                SetVertexBufferType(VBT_VBO_ARB);
+            }
+            else                // no VBO support
+            {
+                GetLogger()->Info("OpenGL %d.%d  without GL_ARB_vertex_buffer_object, VBO not supported\n", major, minor);
+                SetVertexBufferType(VBT_DISPLAY_LIST);
+            }
         }
     }
 
@@ -288,11 +313,13 @@ void CGLDevice::ConfigChanged(const GLDeviceConfig& newConfig)
 void CGLDevice::SetUseVbo(bool vboAvailable)
 {
     m_vboAvailable = vboAvailable;
+    m_vertexBufferType = vboAvailable ? VBT_VBO_CORE : VBT_DISPLAY_LIST;
 }
 
-bool CGLDevice::GetUseVbo()
+void CGLDevice::SetVertexBufferType(VertexBufferType type)
 {
-    return m_vboAvailable;
+    m_vertexBufferType = type;
+    m_vboAvailable = (type != VBT_DISPLAY_LIST);
 }
 
 void CGLDevice::BeginScene()
@@ -339,44 +366,6 @@ void CGLDevice::SetTransform(TransformType type, const Math::Matrix &matrix)
     }
 }
 
-const Math::Matrix& CGLDevice::GetTransform(TransformType type)
-{
-    if      (type == TRANSFORM_WORLD)
-        return m_worldMat;
-    else if (type == TRANSFORM_VIEW)
-        return m_viewMat;
-    else if (type == TRANSFORM_PROJECTION)
-        return m_projectionMat;
-    else
-        assert(false);
-
-    return m_worldMat; // to avoid warning
-}
-
-void CGLDevice::MultiplyTransform(TransformType type, const Math::Matrix &matrix)
-{
-    if      (type == TRANSFORM_WORLD)
-    {
-        m_worldMat = Math::MultiplyMatrices(m_worldMat, matrix);
-        UpdateModelviewMatrix();
-    }
-    else if (type == TRANSFORM_VIEW)
-    {
-        m_viewMat = Math::MultiplyMatrices(m_viewMat, matrix);
-        UpdateModelviewMatrix();
-    }
-    else if (type == TRANSFORM_PROJECTION)
-    {
-        m_projectionMat = Math::MultiplyMatrices(m_projectionMat, matrix);
-        glMatrixMode(GL_PROJECTION);
-        glLoadMatrixf(m_projectionMat.Array());
-    }
-    else
-    {
-        assert(false);
-    }
-}
-
 void CGLDevice::UpdateModelviewMatrix()
 {
     m_modelviewMat = Math::MultiplyMatrices(m_viewMat, m_worldMat);
@@ -400,11 +389,6 @@ void CGLDevice::SetMaterial(const Material &material)
     glMaterialfv(GL_FRONT, GL_AMBIENT,  m_material.ambient.Array());
     glMaterialfv(GL_FRONT, GL_DIFFUSE,  m_material.diffuse.Array());
     glMaterialfv(GL_FRONT, GL_SPECULAR, m_material.specular.Array());
-}
-
-const Material& CGLDevice::GetMaterial()
-{
-    return m_material;
 }
 
 int CGLDevice::GetMaxLightCount()
@@ -482,14 +466,6 @@ void CGLDevice::UpdateLightPosition(int index)
     glPopMatrix();
 }
 
-const Light& CGLDevice::GetLight(int index)
-{
-    assert(index >= 0);
-    assert(index < static_cast<int>( m_lights.size() ));
-
-    return m_lights[index];
-}
-
 void CGLDevice::SetLightEnabled(int index, bool enabled)
 {
     assert(index >= 0);
@@ -501,14 +477,6 @@ void CGLDevice::SetLightEnabled(int index, bool enabled)
         glEnable(GL_LIGHT0 + index);
     else
         glDisable(GL_LIGHT0 + index);
-}
-
-bool CGLDevice::GetLightEnabled(int index)
-{
-    assert(index >= 0);
-    assert(index < static_cast<int>( m_lights.size() ));
-
-    return m_lightsEnabled[index];
 }
 
 /** If image is invalid, returns invalid texture.
@@ -781,15 +749,6 @@ void CGLDevice::SetTexture(int index, unsigned int textureId)
     UpdateTextureParams(index);
 }
 
-/**
-  Returns the previously assigned texture or invalid texture if the given stage is not enabled. */
-Texture CGLDevice::GetTexture(int index)
-{
-    assert(index >= 0 && index < static_cast<int>( m_currentTextures.size() ));
-
-    return m_currentTextures[index];
-}
-
 void CGLDevice::SetTextureEnabled(int index, bool enabled)
 {
     assert(index >= 0 && index < static_cast<int>( m_currentTextures.size() ));
@@ -811,13 +770,6 @@ void CGLDevice::SetTextureEnabled(int index, bool enabled)
         glEnable(GL_TEXTURE_2D);
     else
         glDisable(GL_TEXTURE_2D);
-}
-
-bool CGLDevice::GetTextureEnabled(int index)
-{
-    assert(index >= 0 && index < static_cast<int>( m_currentTextures.size() ));
-
-    return m_texturesEnabled[index];
 }
 
 /**
@@ -851,13 +803,13 @@ void CGLDevice::UpdateTextureParams(int index)
         glActiveTexture(GL_TEXTURE0 + index);
 
     if      (params.wrapS == TEX_WRAP_CLAMP)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     else if (params.wrapS == TEX_WRAP_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     else  assert(false);
 
     if      (params.wrapT == TEX_WRAP_CLAMP)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     else if (params.wrapT == TEX_WRAP_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     else  assert(false);
@@ -990,23 +942,16 @@ void CGLDevice::SetTextureStageWrap(int index, TexWrapMode wrapS, TexWrapMode wr
         glActiveTexture(GL_TEXTURE0 + index);
 
     if      (wrapS == TEX_WRAP_CLAMP)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     else if (wrapS == TEX_WRAP_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     else  assert(false);
 
     if      (wrapT == TEX_WRAP_CLAMP)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     else if (wrapT == TEX_WRAP_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     else  assert(false);
-}
-
-TextureStageParams CGLDevice::GetTextureStageParams(int index)
-{
-    assert(index >= 0 && index < static_cast<int>( m_currentTextures.size() ));
-
-    return m_textureStageParams[index];
 }
 
 GLenum TranslateGfxPrimitive(PrimitiveType type)
@@ -1117,10 +1062,20 @@ unsigned int CGLDevice::CreateStaticBuffer(PrimitiveType primitiveType, const Ve
         info.vertexCount = vertexCount;
         info.bufferId = 0;
 
-        glGenBuffers(1, &info.bufferId);
-        glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
-        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), vertices, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        if(m_vertexBufferType == VBT_VBO_CORE)
+        {
+            glGenBuffers(1, &info.bufferId);
+            glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
+            glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), vertices, GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+        else
+        {
+            glGenBuffersARB(1, &info.bufferId);
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, info.bufferId);
+            glBufferDataARB(GL_ARRAY_BUFFER_ARB, vertexCount * sizeof(Vertex), vertices, GL_STATIC_DRAW_ARB);
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+        }
 
         m_vboObjects[id] = info;
     }
@@ -1151,10 +1106,20 @@ unsigned int CGLDevice::CreateStaticBuffer(PrimitiveType primitiveType, const Ve
         info.vertexCount = vertexCount;
         info.bufferId = 0;
 
-        glGenBuffers(1, &info.bufferId);
-        glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
-        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(VertexTex2), vertices, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        if(m_vertexBufferType == VBT_VBO_CORE)
+        {
+            glGenBuffers(1, &info.bufferId);
+            glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
+            glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(VertexTex2), vertices, GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+        else
+        {
+            glGenBuffersARB(1, &info.bufferId);
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, info.bufferId);
+            glBufferDataARB(GL_ARRAY_BUFFER_ARB, vertexCount * sizeof(VertexTex2), vertices, GL_STATIC_DRAW_ARB);
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+        }
 
         m_vboObjects[id] = info;
     }
@@ -1184,11 +1149,21 @@ unsigned int CGLDevice::CreateStaticBuffer(PrimitiveType primitiveType, const Ve
         info.vertexType = VERTEX_TYPE_COL;
         info.vertexCount = vertexCount;
         info.bufferId = 0;
-
-        glGenBuffers(1, &info.bufferId);
-        glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
-        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(VertexCol), vertices, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        
+        if(m_vertexBufferType == VBT_VBO_CORE)
+        {
+            glGenBuffers(1, &info.bufferId);
+            glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
+            glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(VertexCol), vertices, GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+        else
+        {
+            glGenBuffersARB(1, &info.bufferId);
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, info.bufferId);
+            glBufferDataARB(GL_ARRAY_BUFFER_ARB, vertexCount * sizeof(VertexCol), vertices, GL_STATIC_DRAW_ARB);
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+        }
 
         m_vboObjects[id] = info;
     }
@@ -1219,9 +1194,18 @@ void CGLDevice::UpdateStaticBuffer(unsigned int bufferId, PrimitiveType primitiv
         info.vertexType = VERTEX_TYPE_NORMAL;
         info.vertexCount = vertexCount;
 
-        glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
-        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), vertices, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        if(m_vertexBufferType == VBT_VBO_CORE)
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
+            glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), vertices, GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+        else
+        {
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, info.bufferId);
+            glBufferDataARB(GL_ARRAY_BUFFER_ARB, vertexCount * sizeof(Vertex), vertices, GL_STATIC_DRAW_ARB);
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+        }
     }
     else
     {
@@ -1246,9 +1230,18 @@ void CGLDevice::UpdateStaticBuffer(unsigned int bufferId, PrimitiveType primitiv
         info.vertexType = VERTEX_TYPE_TEX2;
         info.vertexCount = vertexCount;
 
-        glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
-        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(VertexTex2), vertices, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        if(m_vertexBufferType == VBT_VBO_CORE)
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
+            glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(VertexTex2), vertices, GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+        else
+        {
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, info.bufferId);
+            glBufferDataARB(GL_ARRAY_BUFFER_ARB, vertexCount * sizeof(VertexTex2), vertices, GL_STATIC_DRAW_ARB);
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+        }
     }
     else
     {
@@ -1273,9 +1266,18 @@ void CGLDevice::UpdateStaticBuffer(unsigned int bufferId, PrimitiveType primitiv
         info.vertexType = VERTEX_TYPE_COL;
         info.vertexCount = vertexCount;
 
-        glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
-        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(VertexCol), vertices, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        if(m_vertexBufferType == VBT_VBO_CORE)
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, info.bufferId);
+            glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(VertexCol), vertices, GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+        else
+        {
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, info.bufferId);
+            glBufferDataARB(GL_ARRAY_BUFFER_ARB, vertexCount * sizeof(VertexCol), vertices, GL_STATIC_DRAW_ARB);
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+        }
     }
     else
     {
@@ -1296,7 +1298,11 @@ void CGLDevice::DrawStaticBuffer(unsigned int bufferId)
             return;
 
         glEnable(GL_VERTEX_ARRAY);
-        glBindBuffer(GL_ARRAY_BUFFER, (*it).second.bufferId);
+        
+        if(m_vertexBufferType == VBT_VBO_CORE)
+            glBindBuffer(GL_ARRAY_BUFFER, (*it).second.bufferId);
+        else
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, (*it).second.bufferId);
 
         if ((*it).second.vertexType == VERTEX_TYPE_NORMAL)
         {
@@ -1368,7 +1374,11 @@ void CGLDevice::DrawStaticBuffer(unsigned int bufferId)
             glDisableClientState(GL_COLOR_ARRAY);
         }
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        if(m_vertexBufferType == VBT_VBO_CORE)
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        else
+            glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+        
         glDisable(GL_VERTEX_ARRAY);
     }
     else
@@ -1385,7 +1395,10 @@ void CGLDevice::DestroyStaticBuffer(unsigned int bufferId)
         if (it == m_vboObjects.end())
             return;
 
-        glDeleteBuffers(1, &(*it).second.bufferId);
+        if(m_vertexBufferType == VBT_VBO_CORE)
+            glDeleteBuffers(1, &(*it).second.bufferId);
+        else
+            glDeleteBuffersARB(1, &(*it).second.bufferId);
 
         m_vboObjects.erase(it);
     }
@@ -1529,30 +1542,6 @@ void CGLDevice::SetRenderState(RenderState state, bool enabled)
         glDisable(flag);
 }
 
-bool CGLDevice::GetRenderState(RenderState state)
-{
-    if (state == RENDER_STATE_LIGHTING)
-        return m_lighting;
-
-    GLenum flag = 0;
-
-    switch (state)
-    {
-        case RENDER_STATE_DEPTH_WRITE: flag = GL_DEPTH_WRITEMASK; break;
-        case RENDER_STATE_BLENDING:    flag = GL_BLEND; break;
-        case RENDER_STATE_FOG:         flag = GL_FOG; break;
-        case RENDER_STATE_DEPTH_TEST:  flag = GL_DEPTH_TEST; break;
-        case RENDER_STATE_ALPHA_TEST:  flag = GL_ALPHA_TEST; break;
-        case RENDER_STATE_CULLING:     flag = GL_CULL_FACE; break;
-        default: assert(false); break;
-    }
-
-    GLboolean result = GL_FALSE;
-    glGetBooleanv(flag, &result);
-
-    return result == GL_TRUE;
-}
-
 CompFunc TranslateGLCompFunc(GLenum flag)
 {
     switch (flag)
@@ -1592,37 +1581,14 @@ void CGLDevice::SetDepthTestFunc(CompFunc func)
     glDepthFunc(TranslateGfxCompFunc(func));
 }
 
-CompFunc CGLDevice::GetDepthTestFunc()
-{
-    GLint flag = 0;
-    glGetIntegerv(GL_DEPTH_FUNC, &flag);
-    return TranslateGLCompFunc(static_cast<GLenum>(flag));
-}
-
 void CGLDevice::SetDepthBias(float factor)
 {
     glPolygonOffset(factor, 0.0f);
 }
 
-float CGLDevice::GetDepthBias()
-{
-    GLfloat result = 0.0f;
-    glGetFloatv(GL_POLYGON_OFFSET_FACTOR, &result);
-    return result;
-}
-
 void CGLDevice::SetAlphaTestFunc(CompFunc func, float refValue)
 {
     glAlphaFunc(TranslateGfxCompFunc(func), refValue);
-}
-
-void CGLDevice::GetAlphaTestFunc(CompFunc &func, float &refValue)
-{
-    GLint flag = 0;
-    glGetIntegerv(GL_ALPHA_TEST_FUNC, &flag);
-    func = TranslateGLCompFunc(static_cast<GLenum>(flag));
-
-    glGetFloatv(GL_ALPHA_TEST_REF, static_cast<GLfloat*>(&refValue));
 }
 
 BlendFunc TranslateGLBlendFunc(GLenum flag)
@@ -1671,39 +1637,14 @@ void CGLDevice::SetBlendFunc(BlendFunc srcBlend, BlendFunc dstBlend)
     glBlendFunc(TranslateGfxBlendFunc(srcBlend), TranslateGfxBlendFunc(dstBlend));
 }
 
-void CGLDevice::GetBlendFunc(BlendFunc &srcBlend, BlendFunc &dstBlend)
-{
-    GLint srcFlag = 0;
-    glGetIntegerv(GL_ALPHA_TEST_FUNC, &srcFlag);
-    srcBlend = TranslateGLBlendFunc(static_cast<GLenum>(srcFlag));
-
-    GLint dstFlag = 0;
-    glGetIntegerv(GL_ALPHA_TEST_FUNC, &dstFlag);
-    dstBlend = TranslateGLBlendFunc(static_cast<GLenum>(dstFlag));
-}
-
 void CGLDevice::SetClearColor(const Color &color)
 {
     glClearColor(color.r, color.g, color.b, color.a);
 }
 
-Color CGLDevice::GetClearColor()
-{
-    GLfloat color[4] = { 0.0f };
-    glGetFloatv(GL_COLOR_CLEAR_VALUE, color);
-    return Color(color[0], color[1], color[2], color[3]);
-}
-
 void CGLDevice::SetGlobalAmbient(const Color &color)
 {
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, color.Array());
-}
-
-Color CGLDevice::GetGlobalAmbient()
-{
-    GLfloat color[4] = { 0.0f };
-    glGetFloatv(GL_LIGHT_MODEL_AMBIENT, color);
-    return Color(color[0], color[1], color[2], color[3]);
 }
 
 void CGLDevice::SetFogParams(FogMode mode, const Color &color, float start, float end, float density)
@@ -1719,23 +1660,6 @@ void CGLDevice::SetFogParams(FogMode mode, const Color &color, float start, floa
     glFogfv(GL_FOG_COLOR,  color.Array());
 }
 
-void CGLDevice::GetFogParams(FogMode &mode, Color &color, float &start, float &end, float &density)
-{
-    GLint flag = 0;
-    glGetIntegerv(GL_FOG_MODE, &flag);
-    if      (flag == GL_LINEAR) mode = FOG_LINEAR;
-    else if (flag == GL_EXP)    mode = FOG_EXP;
-    else if (flag == GL_EXP2)   mode = FOG_EXP2;
-    else assert(false);
-
-    glGetFloatv(GL_FOG_START,   static_cast<GLfloat*>(&start));
-    glGetFloatv(GL_FOG_END,     static_cast<GLfloat*>(&end));
-    glGetFloatv(GL_FOG_DENSITY, static_cast<GLfloat*>(&density));
-    GLfloat col[4] = { 0.0f };
-    glGetFloatv(GL_FOG_COLOR,  col);
-    color = Color(col[0], col[1], col[2], col[3]);
-}
-
 void CGLDevice::SetCullMode(CullMode mode)
 {
     // Cull clockwise back faces, so front face is the opposite
@@ -1745,31 +1669,11 @@ void CGLDevice::SetCullMode(CullMode mode)
     else assert(false);
 }
 
-CullMode CGLDevice::GetCullMode()
-{
-    GLint flag = 0;
-    glGetIntegerv(GL_FRONT_FACE, &flag);
-    if      (flag == GL_CW)  return CULL_CCW;
-    else if (flag == GL_CCW) return CULL_CW;
-    else assert(false);
-    return CULL_CW;
-}
-
 void CGLDevice::SetShadeModel(ShadeModel model)
 {
     if      (model == SHADE_FLAT)   glShadeModel(GL_FLAT);
     else if (model == SHADE_SMOOTH) glShadeModel(GL_SMOOTH);
     else  assert(false);
-}
-
-ShadeModel CGLDevice::GetShadeModel()
-{
-    GLint flag = 0;
-    glGetIntegerv(GL_SHADE_MODEL, &flag);
-    if      (flag == GL_FLAT)    return SHADE_FLAT;
-    else if (flag == GL_SMOOTH)  return SHADE_SMOOTH;
-    else  assert(false);
-    return SHADE_FLAT;
 }
 
 void CGLDevice::SetFillMode(FillMode mode)
@@ -1780,21 +1684,10 @@ void CGLDevice::SetFillMode(FillMode mode)
     else assert(false);
 }
 
-FillMode CGLDevice::GetFillMode()
-{
-    GLint flag = 0;
-    glGetIntegerv(GL_POLYGON_MODE, &flag);
-    if      (flag == GL_POINT) return FILL_POINT;
-    else if (flag == GL_LINE)  return FILL_LINES;
-    else if (flag == GL_FILL)  return FILL_POLY;
-    else  assert(false);
-    return FILL_POINT;
-}
-
 void* CGLDevice::GetFrameBufferPixels()const{
 
-    GLubyte* pixels = new GLubyte [4 * m_config.size.x * m_config.size.y];
-    
+    GLubyte* pixels = new GLubyte[4 * m_config.size.x * m_config.size.y];
+
     glReadPixels(0, 0, m_config.size.x, m_config.size.y, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
     unsigned int* p = static_cast<unsigned int*> ( static_cast<void*>(pixels) );

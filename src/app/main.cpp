@@ -1,19 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 /**
  * \file app/main.cpp
@@ -69,6 +71,7 @@ The current layout is the following:
  - src/script - link with the CBot library
 */
 
+#include "common/resources/resourcemanager.h"
 
 //! Entry point to the program
 extern "C"
@@ -77,47 +80,52 @@ extern "C"
 int SDL_MAIN_FUNC(int argc, char *argv[])
 {
     CLogger logger; // single istance of logger
+    CResourceManager manager(argv[0]);
 
     // Initialize static string arrays
     InitializeRestext();
     InitializeEventTypeTexts();
 
-    CSystemUtils* systemUtils = CSystemUtils::Create(); // platform-specific utils
-    systemUtils->Init();
-
     logger.Info("Colobot starting\n");
-
-    CApplication* app = new CApplication(); // single instance of the application
-
-    ParseArgsStatus status = app->ParseArguments(argc, argv);
-    if (status == PARSE_ARGS_FAIL)
-    {
-        systemUtils->SystemDialog(SDT_ERROR, "COLOBOT - Fatal Error", "Invalid commandline arguments!\n");
-        return app->GetExitCode();
-    }
-    else if (status == PARSE_ARGS_HELP)
-    {
-        return app->GetExitCode();
-    }
-
+    
     int code = 0;
+    while(true) {
+        CSystemUtils* systemUtils = CSystemUtils::Create(); // platform-specific utils
+        systemUtils->Init();
+        
+        CApplication* app = new CApplication(); // single instance of the application
 
-    if (! app->Create())
-    {
-        app->Destroy(); // ensure a clean exit
-        code = app->GetExitCode();
-        if ( code != 0 && !app->GetErrorMessage().empty() )
+        ParseArgsStatus status = app->ParseArguments(argc, argv);
+        if (status == PARSE_ARGS_FAIL)
         {
-            systemUtils->SystemDialog(SDT_ERROR, "COLOBOT - Fatal Error", app->GetErrorMessage());
+            systemUtils->SystemDialog(SDT_ERROR, "COLOBOT - Fatal Error", "Invalid commandline arguments!\n");
+            return app->GetExitCode();
         }
-        logger.Info("Didn't run main loop. Exiting with code %d\n", code);
-        return code;
+        else if (status == PARSE_ARGS_HELP)
+        {
+            return app->GetExitCode();
+        }
+
+
+        if (! app->Create())
+        {
+            app->Destroy(); // ensure a clean exit
+            code = app->GetExitCode();
+            if ( code != 0 && !app->GetErrorMessage().empty() )
+            {
+                systemUtils->SystemDialog(SDT_ERROR, "COLOBOT - Fatal Error", app->GetErrorMessage());
+            }
+            logger.Info("Didn't run main loop. Exiting with code %d\n", code);
+            return code;
+        }
+
+        code = app->Run();
+        bool restarting = app->IsRestarting();
+
+        delete app;
+        delete systemUtils;
+        if(!restarting) break;
     }
-
-    code = app->Run();
-
-    delete app;
-    delete systemUtils;
 
     logger.Info("Exiting with code %d\n", code);
     return code;

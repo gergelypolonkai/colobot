@@ -1,19 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 /**
  * \file app/app.h
@@ -42,7 +44,6 @@ class CInstanceManager;
 class CEventQueue;
 class CRobotMain;
 class CSoundInterface;
-class CGameData;
 
 namespace Gfx {
 class CModelManager;
@@ -226,6 +227,11 @@ public:
 
     //! Cleans up before exit
     void        Destroy();
+    
+    //! Restart
+    void        Restart();
+    //! Should we restart after app quits?
+    bool        IsRestarting();
 
     //! Returns a list of possible video modes
     VideoQueryResult GetVideoResolutionList(std::vector<Math::IntPoint> &resolutions,
@@ -355,6 +361,9 @@ public:
 protected:
     //! Creates the window's SDL_Surface
     bool CreateVideoSurface();
+    
+    //! Loads all mods from given directory
+    void LoadModsFromDir(const std::string &dir);
 
     //! Processes the captured SDL event to Event struct
     Event       ProcessSystemEvent();
@@ -402,8 +411,6 @@ protected:
     CRobotMain*             m_robotMain;
     //! Profile (INI) reader/writer
     CProfile*               m_profile;
-    //! Game data
-    CGameData*              m_gameData;
 
     //! Code to return at exit
     int             m_exitCode;
@@ -411,6 +418,8 @@ protected:
     bool            m_active;
     //! Bit array of active debug modes
     long            m_debugModes;
+    //! If we are restarting the app
+    bool            m_restart;
 
     //! Message to be displayed as error to the user
     std::string     m_errorMessage;
@@ -467,16 +476,16 @@ protected:
     std::vector<int> m_joyAxeState;
     //! Current state of joystick buttons; may be updated from another thread
     std::vector<bool> m_joyButtonState;
-
+    
     //! Path to directory with data files
     std::string     m_dataPath;
-
-    //! True if datadir was passed in command line
-    bool            m_customDataPath;
-
+    
     //! Path to directory with language files
     std::string     m_langPath;
     
+    //! Path to directory with save files
+    std::string     m_savePath;
+   
     //@{
     //! Scene to run on startup
     std::string     m_runSceneName;
@@ -491,8 +500,11 @@ protected:
 
     //! Low cpu mode
     bool            m_lowCPU;
-
-    //! Show prototype levels
-    bool            m_protoMode;
+    
+    //! Screen resoultion overriden by commandline
+    bool            m_resolutionOverride;
+    
+    //! Headles mode
+    bool            m_headless;
 };
 

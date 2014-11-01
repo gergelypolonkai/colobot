@@ -1,29 +1,31 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "graphics/engine/text.h"
 
 #include "app/app.h"
-#include "app/gamedata.h"
 
 #include "common/image.h"
 #include "common/logger.h"
 #include "common/stringutils.h"
+#include "common/resources/resourcemanager.h"
 
 #include "math/func.h"
 
@@ -78,12 +80,12 @@ bool CText::Create()
         return false;
     }
 
-    m_fonts[FONT_COLOBOT]        = new MultisizeFont("dvu_sans.ttf");
-    m_fonts[FONT_COLOBOT_BOLD]   = new MultisizeFont("dvu_sans_bold.ttf");
-    m_fonts[FONT_COLOBOT_ITALIC] = new MultisizeFont("dvu_sans_italic.ttf");
+    m_fonts[FONT_COLOBOT]        = new MultisizeFont("fonts/dvu_sans.ttf");
+    m_fonts[FONT_COLOBOT_BOLD]   = new MultisizeFont("fonts/dvu_sans_bold.ttf");
+    m_fonts[FONT_COLOBOT_ITALIC] = new MultisizeFont("fonts/dvu_sans_italic.ttf");
 
-    m_fonts[FONT_COURIER]        = new MultisizeFont("dvu_sans_mono.ttf");
-    m_fonts[FONT_COURIER_BOLD]   = new MultisizeFont("dvu_sans_mono_bold.ttf");
+    m_fonts[FONT_COURIER]        = new MultisizeFont("fonts/dvu_sans_mono.ttf");
+    m_fonts[FONT_COURIER_BOLD]   = new MultisizeFont("fonts/dvu_sans_mono_bold.ttf");
 
     for (auto it = m_fonts.begin(); it != m_fonts.end(); ++it)
     {
@@ -866,10 +868,14 @@ CachedFont* CText::GetOrOpenFont(FontType font, float size)
         return m_lastCachedFont;
     }
 
-    std::string path = CGameData::GetInstancePointer()->GetFilePath(DIR_FONT, mf->fileName);
-
     m_lastCachedFont = new CachedFont();
-    m_lastCachedFont->font = TTF_OpenFont(path.c_str(), pointSize);
+    SDL_RWops* file = CResourceManager::GetSDLFileHandler(mf->fileName);
+    if(file == nullptr)
+    {
+        m_error = std::string("Unable to open file");
+        return nullptr;
+    }
+    m_lastCachedFont->font = TTF_OpenFontRW(file, 1, pointSize);
     if (m_lastCachedFont->font == nullptr)
         m_error = std::string("TTF_OpenFont error ") + std::string(TTF_GetError());
 

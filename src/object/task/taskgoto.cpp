@@ -1,18 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include <stdio.h>
@@ -34,7 +37,12 @@
 
 const float FLY_DIST_GROUND = 80.0f;    // minimum distance to remain on the ground
 const float FLY_DEF_HEIGHT  = 50.0f;    // default flying height
-const float BM_DIM_STEP     = 5.0f;
+
+// Settings that define goto() accuracy:
+const float BM_DIM_STEP     = 5.0f;     // Size of one pixel on the bitmap. Setting 5 means that 5x5 square (in game units) will be represented by 1 px on the bitmap. Decreasing this value will make a bigger bitmap, and may increase accuracy. TODO: Check how it actually impacts goto() accuracy
+const float BEAM_ACCURACY   = 5.0f;    // higher value = more accurate, but slower
+const float SAFETY_MARGIN   = 0.5f;     // Smallest distance between two objects. Smaller = less "no route to destination", but higher probability of collisions between objects.
+// Changing SAFETY_MARGIN (old value was 4.0f) seems to have fixed many issues with goto(). TODO: maybe we could make it even smaller? Did changing it introduce any new bugs?
 
 
 
@@ -1736,7 +1744,7 @@ Error CTaskGoto::BeamSearch(const Math::Vector &start, const Math::Vector &goal,
     m_bmStep ++;
 
     len = Math::DistanceProjected(start, goal);
-    step = len/5.0f;
+    step = len/BEAM_ACCURACY;
     if ( step < BM_DIM_STEP*2.1f )  step = BM_DIM_STEP*2.1f;
     if ( step > 20.0f            )  step = 20.0f;
     nbIter = 200;  // in order not to lower the framerate
@@ -1966,7 +1974,7 @@ void CTaskGoto::BitmapObject()
             }
 
             if ( type == OBJECT_PARA )  oRadius -= 2.0f;
-            BitmapSetCircle(oPos, oRadius+iRadius+4.0f);
+            BitmapSetCircle(oPos, oRadius+iRadius+SAFETY_MARGIN);
         }
     }
 }

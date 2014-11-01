@@ -1,25 +1,26 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012, Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "graphics/engine/engine.h"
 
 #include "app/app.h"
-#include "app/gamedata.h"
 
 #include "common/image.h"
 #include "common/key.h"
@@ -283,7 +284,7 @@ bool CEngine::Create()
     params.minFilter = TEX_MIN_FILTER_NEAREST;
     params.magFilter = TEX_MAG_FILTER_NEAREST;
     params.mipmap = false;
-    m_miceTexture = LoadTexture("mouse.png", params);
+    m_miceTexture = LoadTexture("textures/interface/mouse.png", params);
 
     GetSystemUtils()->GetCurrentTimeStamp(m_currentFrameTime);
     GetSystemUtils()->GetCurrentTimeStamp(m_lastFrameTime);
@@ -294,6 +295,9 @@ bool CEngine::Create()
 void CEngine::Destroy()
 {
     m_text->Destroy();
+    
+    delete m_pause;
+    m_pause = nullptr;
 
     delete m_lightMan;
     m_lightMan = nullptr;
@@ -319,11 +323,13 @@ void CEngine::Destroy()
 
 void CEngine::ResetAfterDeviceChanged()
 {
-    m_size = m_app->GetVideoConfig().size;;
+    m_size = m_app->GetVideoConfig().size;
 
     m_text->FlushCache();
 
     FlushTextureCache();
+    
+    LoadAllTextures();
 }
 
 bool CEngine::ProcessEvent(const Event &event)
@@ -507,6 +513,16 @@ void CEngine::AddStatisticTriangle(int count)
 int CEngine::GetStatisticTriangle()
 {
     return m_statisticTriangle;
+}
+
+void CEngine::SetStatisticPos(Math::Vector pos)
+{
+    m_statisticPos = pos;
+}
+
+void CEngine::SetTimerDisplay(const std::string& text)
+{
+    m_timerText = text;
 }
 
 
@@ -1124,10 +1140,10 @@ void CEngine::ChangeSecondTexture(int objRank, const std::string& tex2Name)
         p1.next[l2].next.clear();
 
         if (!newP2.tex1.Valid())
-            newP2.tex1 = LoadTexture(newP2.tex1Name);
+            newP2.tex1 = LoadTexture("textures/"+newP2.tex1Name);
 
         if (!newP2.tex2.Valid())
-            newP2.tex2 = LoadTexture(newP2.tex2Name);
+            newP2.tex2 = LoadTexture("textures/"+newP2.tex2Name);
     }
 }
 
@@ -1965,10 +1981,10 @@ bool CEngine::IsWithinLODLimit(float distance, LODLevel lodLevel)
         }
 
         min *= m_size.x / 640.0f;
-        min *= m_objectDetail*2.0f;
+        min *= 1.0f+m_objectDetail*2.0f;
 
         max *= m_size.x / 640.0f;
-        max *= m_objectDetail*2.0f;
+        max *= 1.0f+m_objectDetail*2.0f;
     }
 
     return distance >= min && distance < max;
@@ -2258,7 +2274,7 @@ Texture CEngine::CreateTexture(const std::string& texName, const TextureCreatePa
 
     if (image == nullptr)
     {
-        if (! img.Load(CGameData::GetInstancePointer()->GetFilePath(DIR_TEXTURE, texName)))
+        if (!img.Load(texName))
         {
             std::string error = img.GetError();
             GetLogger()->Error("Couldn't load texture '%s': %s, blacklisting\n", texName.c_str(), error.c_str());
@@ -2309,27 +2325,27 @@ Texture CEngine::LoadTexture(const std::string& name, const TextureCreateParams&
 
 bool CEngine::LoadAllTextures()
 {
-    LoadTexture("text.png");
-    m_miceTexture = LoadTexture("mouse.png");
-    LoadTexture("button1.png");
-    LoadTexture("button2.png");
-    LoadTexture("button3.png");
-    LoadTexture("effect00.png");
-    LoadTexture("effect01.png");
-    LoadTexture("effect02.png");
-    LoadTexture("map.png");
+    LoadTexture("textures/interface/text.png");
+    m_miceTexture = LoadTexture("textures/interface/mouse.png");
+    LoadTexture("textures/interface/button1.png");
+    LoadTexture("textures/interface/button2.png");
+    LoadTexture("textures/interface/button3.png");
+    LoadTexture("textures/effect00.png");
+    LoadTexture("textures/effect01.png");
+    LoadTexture("textures/effect02.png");
+    LoadTexture("textures/interface/map.png");
 
     if (! m_backgroundName.empty())
     {
         TextureCreateParams params = m_defaultTexParams;
         params.padToNearestPowerOfTwo = true;
-        m_backgroundTex = LoadTexture(m_backgroundName, params);
+        m_backgroundTex = LoadTexture("textures/"+m_backgroundName, params);
     }
     else
         m_backgroundTex.SetInvalid();
 
     if (! m_foregroundName.empty())
-        m_foregroundTex = LoadTexture(m_foregroundName);
+        m_foregroundTex = LoadTexture("textures/"+m_foregroundName);
     else
         m_foregroundTex.SetInvalid();
 
@@ -2363,9 +2379,9 @@ bool CEngine::LoadAllTextures()
             if (! p2.tex1Name.empty())
             {
                 if (terrain)
-                    p2.tex1 = LoadTexture(p2.tex1Name, m_terrainTexParams);
+                    p2.tex1 = LoadTexture("textures/"+p2.tex1Name, m_terrainTexParams);
                 else
-                    p2.tex1 = LoadTexture(p2.tex1Name);
+                    p2.tex1 = LoadTexture("textures/"+p2.tex1Name);
 
                 if (! p2.tex1.Valid())
                     ok = false;
@@ -2374,9 +2390,9 @@ bool CEngine::LoadAllTextures()
             if (! p2.tex2Name.empty())
             {
                 if (terrain)
-                    p2.tex2 = LoadTexture(p2.tex2Name, m_terrainTexParams);
+                    p2.tex2 = LoadTexture("textures/"+p2.tex2Name, m_terrainTexParams);
                 else
-                    p2.tex2 = LoadTexture(p2.tex2Name);
+                    p2.tex2 = LoadTexture("textures/"+p2.tex2Name);
 
                 if (! p2.tex2.Valid())
                     ok = false;
@@ -2426,7 +2442,7 @@ bool CEngine::ChangeTextureColor(const std::string& texName,
 
 
     CImage img;
-    if (! img.Load(CGameData::GetInstancePointer()->GetFilePath(DIR_TEXTURE, texName)))
+    if (!img.Load(texName))
     {
         std::string error = img.GetError();
         GetLogger()->Error("Couldn't load texture '%s': %s, blacklisting\n", texName.c_str(), error.c_str());
@@ -2771,7 +2787,7 @@ void CEngine::SetBackground(const std::string& name, Color up, Color down,
     {
         TextureCreateParams params = m_defaultTexParams;
         params.padToNearestPowerOfTwo = true;
-        m_backgroundTex = LoadTexture(m_backgroundName, params);
+        m_backgroundTex = LoadTexture("textures/"+m_backgroundName, params);
     }
 }
 
@@ -2797,7 +2813,7 @@ void CEngine::SetForegroundName(const std::string& name)
     m_foregroundName = name;
 
     if (! m_foregroundName.empty())
-        m_foregroundTex = LoadTexture(m_foregroundName);
+        m_foregroundTex = LoadTexture("textures/"+m_foregroundName);
 }
 
 void CEngine::SetOverFront(bool front)
@@ -3124,67 +3140,67 @@ void CEngine::Draw3DScene()
 
     m_app->StartPerformanceCounter(PCNT_RENDER_TERRAIN);
 
-    // Draw terrain with shadows, if shadows enabled
-    if (m_shadowVisible)
+    // Draw terrain 
+    
+    m_lightMan->UpdateDeviceLights(ENG_OBJTYPE_TERRAIN);
+
+    for (int objRank = 0; objRank < static_cast<int>(m_objects.size()); objRank++)
     {
-        m_lightMan->UpdateDeviceLights(ENG_OBJTYPE_TERRAIN);
+        if (! m_objects[objRank].used)
+            continue;
 
-        for (int objRank = 0; objRank < static_cast<int>(m_objects.size()); objRank++)
+        if (m_objects[objRank].type != ENG_OBJTYPE_TERRAIN)
+            continue;
+
+        if (! m_objects[objRank].drawWorld)
+            continue;
+
+        m_device->SetTransform(TRANSFORM_WORLD, m_objects[objRank].transform);
+
+        if (! IsVisible(objRank))
+            continue;
+
+        int baseObjRank = m_objects[objRank].baseObjRank;
+        if (baseObjRank == -1)
+            continue;
+
+        assert(baseObjRank >= 0 && baseObjRank < static_cast<int>( m_baseObjects.size() ));
+
+        EngineBaseObject& p1 = m_baseObjects[baseObjRank];
+        if (! p1.used)
+            continue;
+
+        for (int l2 = 0; l2 < static_cast<int>( p1.next.size() ); l2++)
         {
-            if (! m_objects[objRank].used)
-                continue;
+            EngineBaseObjTexTier& p2 = p1.next[l2];
 
-            if (m_objects[objRank].type != ENG_OBJTYPE_TERRAIN)
-                continue;
+            SetTexture(p2.tex1, 0);
+            SetTexture(p2.tex2, 1);
 
-            if (! m_objects[objRank].drawWorld)
-                continue;
-
-            m_device->SetTransform(TRANSFORM_WORLD, m_objects[objRank].transform);
-
-            if (! IsVisible(objRank))
-                continue;
-
-            int baseObjRank = m_objects[objRank].baseObjRank;
-            if (baseObjRank == -1)
-                continue;
-
-            assert(baseObjRank >= 0 && baseObjRank < static_cast<int>( m_baseObjects.size() ));
-
-            EngineBaseObject& p1 = m_baseObjects[baseObjRank];
-            if (! p1.used)
-                continue;
-
-            for (int l2 = 0; l2 < static_cast<int>( p1.next.size() ); l2++)
+            for (int l3 = 0; l3 < static_cast<int>( p2.next.size() ); l3++)
             {
-                EngineBaseObjTexTier& p2 = p1.next[l2];
+                EngineBaseObjLODTier& p3 = p2.next[l3];
 
-                SetTexture(p2.tex1, 0);
-                SetTexture(p2.tex2, 1);
+                if (! IsWithinLODLimit(m_objects[objRank].distance, p3.lodLevel))
+                    continue;
 
-                for (int l3 = 0; l3 < static_cast<int>( p2.next.size() ); l3++)
+                for (int l4 = 0; l4 < static_cast<int>( p3.next.size() ); l4++)
                 {
-                    EngineBaseObjLODTier& p3 = p2.next[l3];
+                    EngineBaseObjDataTier& p4 = p3.next[l4];
 
-                    if (! IsWithinLODLimit(m_objects[objRank].distance, p3.lodLevel))
-                        continue;
+                    SetMaterial(p4.material);
+                    SetState(p4.state);
 
-                    for (int l4 = 0; l4 < static_cast<int>( p3.next.size() ); l4++)
-                    {
-                        EngineBaseObjDataTier& p4 = p3.next[l4];
-
-                        SetMaterial(p4.material);
-                        SetState(p4.state);
-
-                        DrawObject(p4);
-                    }
+                    DrawObject(p4);
                 }
             }
         }
-
-        // Draws the shadows
-        DrawShadow();
     }
+
+        // Draws the shadows , if shadows enabled
+	if (m_shadowVisible)
+        DrawShadow();
+    
 
     m_app->StopPerformanceCounter(PCNT_RENDER_TERRAIN);
 
@@ -3499,6 +3515,7 @@ void CEngine::DrawInterface()
     DrawMouse();
     DrawHighlight();
     DrawStats();
+    DrawTimer();
 }
 
 void CEngine::UpdateGroundSpotTextures()
@@ -3736,7 +3753,7 @@ void CEngine::UpdateGroundSpotTextures()
             }
 
             std::stringstream str;
-            str << "shadow" << std::setfill('0') << std::setw(2) << s << ".png";
+            str << "textures/shadow" << std::setfill('0') << std::setw(2) << s << ".png";
             std::string texName = str.str();
 
             DeleteTexture(texName);
@@ -3785,7 +3802,7 @@ void CEngine::DrawShadow()
     SetMaterial(material);
 
     // TODO: create a separate texture
-    SetTexture("text.png");
+    SetTexture("textures/interface/text.png");
 
     Math::Point ts, ti;
 
@@ -4329,7 +4346,7 @@ void CEngine::DrawStats()
     float height = m_text->GetAscent(FONT_COLOBOT, 12.0f);
     float width = 0.2f;
 
-    Math::Point pos(0.04f, 0.04f + 17 * height);
+    Math::Point pos(0.04f, 0.04f + 20 * height);
 
     SetState(ENG_RSTATE_OPAQUE_COLOR);
 
@@ -4337,9 +4354,9 @@ void CEngine::DrawStats()
 
     VertexCol vertex[4] =
     {
-        VertexCol(Math::Vector(pos.x        , pos.y - 17 * height, 0.0f), black),
+        VertexCol(Math::Vector(pos.x        , pos.y - 20 * height, 0.0f), black),
         VertexCol(Math::Vector(pos.x        , pos.y + height, 0.0f), black),
-        VertexCol(Math::Vector(pos.x + width, pos.y - 17 * height, 0.0f), black),
+        VertexCol(Math::Vector(pos.x + width, pos.y - 20 * height, 0.0f), black),
         VertexCol(Math::Vector(pos.x + width, pos.y + height, 0.0f), black)
     };
 
@@ -4452,6 +4469,28 @@ void CEngine::DrawStats()
     pos.y -= height;
 
     m_text->DrawText(m_fpsText, FONT_COLOBOT, 12.0f, pos, 1.0f, TEXT_ALIGN_LEFT, 0, Color(1.0f, 1.0f, 1.0f, 1.0f));
+    
+    
+    pos.y -= height;
+    pos.y -= height;
+    
+    str.str("");
+    str << "Position x: " << std::fixed << std::setprecision(2) << m_statisticPos.x/g_unit;
+    m_text->DrawText(str.str(), FONT_COLOBOT, 12.0f, pos, 1.0f, TEXT_ALIGN_LEFT, 0, Color(1.0f, 1.0f, 1.0f, 1.0f));
+    
+    pos.y -= height;
+    
+    str.str("");
+    str << "Position y: " << std::fixed << std::setprecision(2) << m_statisticPos.z/g_unit;
+    m_text->DrawText(str.str(), FONT_COLOBOT, 12.0f, pos, 1.0f, TEXT_ALIGN_LEFT, 0, Color(1.0f, 1.0f, 1.0f, 1.0f));
+}
+
+void CEngine::DrawTimer()
+{
+    SetState(ENG_RSTATE_TEXT);
+    
+    Math::Point pos(0.98f, 0.98f-m_text->GetAscent(FONT_COLOBOT, 15.0f));
+    m_text->DrawText(m_timerText, FONT_COLOBOT, 15.0f, pos, 1.0f, TEXT_ALIGN_RIGHT, 0, Color(1.0f, 1.0f, 1.0f, 1.0f));
 }
 
 

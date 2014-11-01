@@ -1,19 +1,21 @@
-// * This file is part of the COLOBOT source code
-// * Copyright (C) 2001-2008, Daniel ROUX & EPSITEC SA, www.epsitec.ch
-// * Copyright (C) 2012 Polish Portal of Colobot (PPC)
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program. If not, see  http://www.gnu.org/licenses/.
+/*
+ * This file is part of the Colobot: Gold Edition source code
+ * Copyright (C) 2001-2014, Daniel Roux, EPSITEC SA & TerranovaTeam
+ * http://epsiteс.ch; http://colobot.info; http://github.com/colobot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://gnu.org/licenses
+ */
 
 
 #include "ui/map.h"
@@ -322,7 +324,7 @@ void CMap::Draw()
         m_offset = AdjustOffset(m_map[MAPMAXOBJECT - 1].pos);
 
     if ( m_fixImage[0] == 0 ) { // drawing of the relief?
-        m_engine->SetTexture("map.png");
+        m_engine->SetTexture("textures/interface/map.png");
         m_engine->SetState(Gfx::ENG_RSTATE_NORMAL);
         uv1.x = 0.5f + (m_offset.x - (m_half / m_zoom)) / (m_half * 2.0f);
         uv1.y = 0.5f - (m_offset.y + (m_half / m_zoom)) / (m_half * 2.0f);
@@ -330,8 +332,10 @@ void CMap::Draw()
         uv2.y = 0.5f - (m_offset.y - (m_half / m_zoom)) / (m_half * 2.0f);
         DrawVertex(uv1, uv2, 0.97f);  // drawing the map
     } else {   // still image?
-        m_engine->LoadTexture(m_fixImage);
-        m_engine->SetTexture(m_fixImage);
+        std::string texFilename = m_fixImage;
+        texFilename = "textures/"+texFilename;
+        m_engine->LoadTexture(texFilename.c_str());
+        m_engine->SetTexture(texFilename.c_str());
         m_engine->SetState(Gfx::ENG_RSTATE_NORMAL);
         uv1.x = 0.0f;
         uv1.y = 0.0f;
@@ -469,7 +473,7 @@ void CMap::DrawFocus(Math::Point pos, float dir, ObjectType type, MapColor color
     uv2.x = 126.0f/256.0f;
     uv2.y = 255.0f/256.0f;
 
-    m_engine->SetTexture("button2.png");
+    m_engine->SetTexture("textures/interface/button2.png");
     m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_WHITE);
 
     bEnding = false;
@@ -529,7 +533,7 @@ void CMap::DrawObject(Math::Point pos, float dir, ObjectType type, MapColor colo
             return;  // flashes
         }
 
-        m_engine->SetTexture("button2.png");
+        m_engine->SetTexture("textures/interface/button2.png");
         m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_BLACK);
         if ( bUp )
         {
@@ -672,7 +676,7 @@ void CMap::DrawObject(Math::Point pos, float dir, ObjectType type, MapColor colo
     {
         if ( bSelect )
         {
-            m_engine->SetTexture("button2.png");
+            m_engine->SetTexture("textures/interface/button2.png");
             m_engine->SetState(Gfx::ENG_RSTATE_NORMAL);
             if ( m_bToy )
             {
@@ -698,7 +702,7 @@ void CMap::DrawObject(Math::Point pos, float dir, ObjectType type, MapColor colo
     {
         if ( m_bRadar )
         {
-            m_engine->SetTexture("button2.png");
+            m_engine->SetTexture("textures/interface/button2.png");
             m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_WHITE);
             uv1.x =  64.5f/256.0f;  // blue triangle
             uv1.y = 240.5f/256.0f;
@@ -718,7 +722,7 @@ void CMap::DrawObject(Math::Point pos, float dir, ObjectType type, MapColor colo
 
     if ( color == MAPCOLOR_WAYPOINTb )
     {
-        m_engine->SetTexture("button2.png");
+        m_engine->SetTexture("textures/interface/button2.png");
         m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_BLACK);
         uv1.x = 192.5f/256.0f;  // blue cross
         uv1.y = 240.5f/256.0f;
@@ -728,7 +732,7 @@ void CMap::DrawObject(Math::Point pos, float dir, ObjectType type, MapColor colo
     }
     if ( color == MAPCOLOR_WAYPOINTr )
     {
-        m_engine->SetTexture("button2.png");
+        m_engine->SetTexture("textures/interface/button2.png");
         m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_BLACK);
         uv1.x = 208.5f/256.0f;  // red cross
         uv1.y = 240.5f/256.0f;
@@ -738,7 +742,7 @@ void CMap::DrawObject(Math::Point pos, float dir, ObjectType type, MapColor colo
     }
     if ( color == MAPCOLOR_WAYPOINTg )
     {
-        m_engine->SetTexture("button2.png");
+        m_engine->SetTexture("textures/interface/button2.png");
         m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_BLACK);
         uv1.x = 224.5f/256.0f;  // green cross
         uv1.y = 240.5f/256.0f;
@@ -748,7 +752,7 @@ void CMap::DrawObject(Math::Point pos, float dir, ObjectType type, MapColor colo
     }
     if ( color == MAPCOLOR_WAYPOINTy )
     {
-        m_engine->SetTexture("button2.png");
+        m_engine->SetTexture("textures/interface/button2.png");
         m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_BLACK);
         uv1.x = 240.5f/256.0f;  // yellow cross
         uv1.y = 240.5f/256.0f;
@@ -758,7 +762,7 @@ void CMap::DrawObject(Math::Point pos, float dir, ObjectType type, MapColor colo
     }
     if ( color == MAPCOLOR_WAYPOINTv )
     {
-        m_engine->SetTexture("button2.png");
+        m_engine->SetTexture("textures/interface/button2.png");
         m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_BLACK);
         uv1.x = 192.5f/256.0f;  // violet cross
         uv1.y = 224.5f/256.0f;
@@ -779,7 +783,7 @@ void CMap::DrawObjectIcon(Math::Point pos, Math::Point dim, MapColor color,
 
     dp = 0.5f/256.0f;
 
-    m_engine->SetTexture("button3.png");
+    m_engine->SetTexture("textures/interface/button3.png");
     m_engine->SetState(Gfx::ENG_RSTATE_NORMAL);
     if ( color == MAPCOLOR_MOVE )
     {
@@ -894,7 +898,7 @@ void CMap::DrawHighlight(Math::Point pos)
     dim.x *= 2.0f+cosf(m_time*8.0f)*0.5f;
     dim.y *= 2.0f+cosf(m_time*8.0f)*0.5f;
 
-    m_engine->SetTexture("button2.png");
+    m_engine->SetTexture("textures/interface/button2.png");
     m_engine->SetState(Gfx::ENG_RSTATE_TTEXTURE_BLACK);
     uv1.x = 160.5f/256.0f;  // hilite
     uv1.y = 224.5f/256.0f;
@@ -1052,8 +1056,8 @@ void CMap::UpdateTerrain()
         }
     }
 
-    m_engine->DeleteTexture("map.png");
-    m_engine->LoadTexture("map.png", &img);
+    m_engine->DeleteTexture("interface/map.png");
+    m_engine->LoadTexture("textures/interface/map.png", &img);
 }
 
 // Updates the field in the map.
